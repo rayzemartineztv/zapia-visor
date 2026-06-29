@@ -16,7 +16,6 @@ body{background:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 .wrap{flex:1;padding:8px;display:flex;flex-direction:column;align-items:center;gap:8px}
 img{max-width:100%;border-radius:8px;display:block;box-shadow:0 4px 32px rgba(0,0,0,.7);background:#1e293b}
 .stats{display:flex;gap:12px;font-size:11px;color:#64748b}
-.stat span{color:#94a3b8;font-weight:600}
 </style>
 </head>
 <body>
@@ -36,14 +35,12 @@ img{max-width:100%;border-radius:8px;display:block;box-shadow:0 4px 32px rgba(0,
   </div>
 </div>
 <script>
-const GIST_ID = "b2cce4eb05a71616fd742bf4a4e2d870";
-const _k="zapia2026visor",_e="HQkANhFnV1dcFQ87XwEvUTY9N1xURGQuIysVRzsqRjkZdwRgUgZZQQ==";
-const TOKEN=(()=>{const b=atob(_e),k=_k;return Array.from(b).map((c,i)=>String.fromCharCode(c.charCodeAt(0)^k.charCodeAt(i%k.length))).join('');})();
-const img     = document.getElementById("frame");
-const tsEl    = document.getElementById("ts");
-const fpsEl   = document.getElementById("fps");
-const latEl   = document.getElementById("lat");
-const cntEl   = document.getElementById("cnt");
+const GIST_ID = "1013efee7161084358c8d019bb0a9d0e";
+const img   = document.getElementById("frame");
+const tsEl  = document.getElementById("ts");
+const fpsEl = document.getElementById("fps");
+const latEl = document.getElementById("lat");
+const cntEl = document.getElementById("cnt");
 
 let frames=0, prevContent="", errs=0;
 const fpsArr=[];
@@ -55,7 +52,6 @@ async function fetchFrame() {
       "https://api.github.com/gists/" + GIST_ID + "?t=" + t0,
       {
         headers:{
-          "Authorization": "token " + TOKEN,
           "Accept": "application/vnd.github.v3+json",
           "Cache-Control": "no-cache"
         },
@@ -80,7 +76,7 @@ async function fetchFrame() {
     tsEl.textContent = "Actualizado: " + new Date().toLocaleTimeString("es-CL");
   } catch(e) {
     errs++;
-    if(errs>3) tsEl.textContent = "Sin señal — reintentando...";
+    if(errs>3) tsEl.textContent = "Sin senal — reintentando...";
   }
 }
 
