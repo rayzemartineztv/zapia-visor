@@ -25,31 +25,11 @@
     margin-bottom: 10px;
   }
   h1 { font-size: 14px; color: #666; letter-spacing: 1px; text-transform: uppercase; }
-  #selector { display: flex; gap: 6px; }
-  .tab-btn {
-    padding: 5px 14px;
-    border-radius: 20px;
-    border: 1px solid #333;
-    background: #111;
-    color: #555;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: 'Segoe UI', sans-serif;
-  }
-  .tab-btn.active { background: #e74c3c; border-color: #e74c3c; color: #fff; }
-  .tab-btn:hover:not(.active) { border-color: #555; color: #aaa; }
-  .badge {
-    font-size: 9px; background: #333; padding: 1px 5px;
-    border-radius: 8px; margin-left: 4px; color: #888;
-  }
-  .tab-btn.active .badge { background: rgba(255,255,255,0.2); color: #fff; }
-
   #status-bar {
     width: 100%; max-width: 960px;
     display: flex; gap: 10px;
     font-size: 11px; color: #555;
-    margin-bottom: 8px; align-items: center; min-height: 18px;
+    margin-bottom: 8px; align-items: center;
   }
   #dot {
     width: 7px; height: 7px; border-radius: 50%;
@@ -58,26 +38,12 @@
   }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
   #dot.offline { background: #e74c3c; animation: none; }
-
-  .panel { width: 100%; max-width: 960px; display: none; }
-  .panel.active { display: block; }
-
   .frame-wrap {
+    width: 100%; max-width: 960px;
     background: #111; border: 1px solid #1a1a1a;
     border-radius: 8px; overflow: hidden;
   }
   .frame-wrap img { width: 100%; height: auto; display: block; }
-
-  #lab-info {
-    background: #0d0d0d; border: 1px solid #1a1a1a;
-    border-radius: 6px; padding: 10px 14px;
-    margin-top: 8px; font-size: 11px; color: #444; line-height: 1.9;
-  }
-  #lab-info b { color: #777; }
-  .metric-good { color: #2ecc71 !important; }
-  .metric-ok   { color: #f39c12 !important; }
-  .metric-bad  { color: #e74c3c !important; }
-
   #footer {
     font-size: 10px; color: #222;
     margin-top: 8px; text-align: center;
@@ -87,163 +53,64 @@
 <body>
 
 <div id="header">
-  <h1>⚡ Zapia Visor</h1>
-  <div id="selector">
-    <button class="tab-btn active" id="btn1" onclick="switchPanel(1)">
-      Pantalla 1 <span class="badge">OFICIAL</span>
-    </button>
-    <button class="tab-btn" id="btn2" onclick="switchPanel(2)">
-      Pantalla 2 <span class="badge">PRUEBAS</span>
-    </button>
-  </div>
+  <h1>⚡ Zapia Visor — En Vivo</h1>
 </div>
 
 <div id="status-bar">
   <div id="dot"></div>
   <span id="status-text">Conectando...</span>
-  <span id="sha-label"></span>
-  <span id="fps-label"></span>
+  <span id="latency-label"></span>
 </div>
 
-<!-- PANTALLA 1 — OFICIAL (GitHub → Vercel proxy) -->
-<div id="panel1" class="panel active">
-  <div class="frame-wrap">
-    <img id="frame1" src="" alt="Cargando..." />
-  </div>
+<div class="frame-wrap">
+  <img id="frame" src="" alt="Cargando..." />
 </div>
 
-<!-- PANTALLA 2 — PRUEBAS (Push directo → Vercel memoria) -->
-<div id="panel2" class="panel">
-  <div class="frame-wrap">
-    <img id="frame2" src="" alt="Esperando señal..." />
-  </div>
-  <div id="lab-info">
-    <b>🧪 Pantalla 2 — Modo Push (sin GitHub)</b><br>
-    Zapia envía frames directo a Vercel. Sin pasar por GitHub.<br><br>
-    <span id="m-latency">Latencia proxy: <b>—</b></span> &nbsp;|&nbsp;
-    <span id="m-load">Carga img: <b>—</b></span> &nbsp;|&nbsp;
-    <span id="m-interval">Intervalo real: <b>—</b></span><br>
-    <span id="m-frames">Frames recibidos: <b>0</b></span> &nbsp;|&nbsp;
-    <span id="m-sha">SHA: <b>—</b></span>
-  </div>
-</div>
-
-<div id="footer">zapia-visor-proxy.vercel.app · P1: polling 2s · P2: polling 300ms</div>
+<div id="footer">rayzemartineztv.github.io/zapia-visor · actualización ~2s</div>
 
 <script>
-const PROXY = "https://zapia-visor-proxy.vercel.app";
-
-// ── Estado ──────────────────────────────────────────────────
-let currentPanel = 1;
-let sha1 = null, sha2 = null;
-let frames2 = 0;
-let lastUpdateTs2 = Date.now();
-
+const RAW = "https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/frame.png";
 const dot    = document.getElementById("dot");
 const status = document.getElementById("status-text");
-const shaLbl = document.getElementById("sha-label");
-const fpsLbl = document.getElementById("fps-label");
-const img1   = document.getElementById("frame1");
-const img2   = document.getElementById("frame2");
+const latLbl = document.getElementById("latency-label");
+const img    = document.getElementById("frame");
 
-// ── Switch ───────────────────────────────────────────────────
-function switchPanel(n) {
-  currentPanel = n;
-  document.getElementById("panel1").classList.toggle("active", n===1);
-  document.getElementById("panel2").classList.toggle("active", n===2);
-  document.getElementById("btn1").classList.toggle("active", n===1);
-  document.getElementById("btn2").classList.toggle("active", n===2);
-}
+let lastSize = 0;
+let errors = 0;
 
-// ── Helpers ──────────────────────────────────────────────────
-function setMetric(id, label, val, unit, good, ok) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  let cls = val <= good ? "metric-good" : val <= ok ? "metric-ok" : "metric-bad";
-  el.innerHTML = `${label}: <b class="${cls}">${val}${unit}</b>`;
-}
-
-// ── PANTALLA 1 — polling 2s vía GitHub proxy ──────────────────
-async function checkP1() {
+async function refresh() {
   try {
     const t0 = Date.now();
-    const r = await fetch(`${PROXY}/api/sha?t=${t0}`);
-    const sha = await r.text();
-    const proxyMs = Date.now() - t0;
-
-    if (sha !== sha1) {
-      sha1 = sha;
-      const tImg = Date.now();
-      const img = new Image();
-      img.onload = () => {
-        img1.src = img.src;
-        const loadMs = Date.now() - tImg;
-        if (currentPanel === 1) {
-          dot.className = "";
-          status.textContent = "En vivo";
-          shaLbl.textContent = "SHA: " + sha;
-          fpsLbl.textContent = `↻ proxy ${proxyMs}ms · img ${loadMs}ms`;
-        }
-      };
-      img.onerror = () => { dot.className = "offline"; };
-      img.src = `${PROXY}/api/frame?sha=${sha}`;
+    // Bust cache con timestamp
+    const url = RAW + "?t=" + t0;
+    const resp = await fetch(url, { cache: "no-store" });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const blob = await resp.blob();
+    const ms = Date.now() - t0;
+    const objUrl = URL.createObjectURL(blob);
+    // Solo actualizar si hay cambio (tamaño diferente)
+    if (blob.size !== lastSize) {
+      const old = img.src;
+      img.src = objUrl;
+      if (old.startsWith("blob:")) URL.revokeObjectURL(old);
+      lastSize = blob.size;
     }
+    errors = 0;
+    dot.className = "";
+    status.textContent = "En vivo";
+    latLbl.textContent = `↻ ${ms}ms · ${(blob.size/1024).toFixed(0)}KB`;
   } catch(e) {
-    if (currentPanel === 1) { dot.className = "offline"; status.textContent = "Sin señal"; }
+    errors++;
+    if (errors >= 3) {
+      dot.className = "offline";
+      status.textContent = "Sin señal";
+      latLbl.textContent = "";
+    }
   }
 }
 
-// ── PANTALLA 2 — polling 300ms vía push directo ───────────────
-async function checkP2() {
-  try {
-    const t0 = Date.now();
-    const r = await fetch(`${PROXY}/api/sha2?t=${t0}`);
-    if (!r.ok) return;
-    const sha = await r.text();
-    const proxyMs = Date.now() - t0;
-
-    if (sha === 'none' || sha === sha2) return;
-    sha2 = sha;
-
-    const tImg = Date.now();
-    const img = new Image();
-    img.onload = () => {
-      img2.src = img.src;
-      const loadMs = Date.now() - tImg;
-      const now = Date.now();
-      const interval = ((now - lastUpdateTs2) / 1000).toFixed(2);
-      lastUpdateTs2 = now;
-      frames2++;
-
-      setMetric("m-latency", "Latencia proxy", proxyMs, "ms", 200, 500);
-      setMetric("m-load",    "Carga img",      loadMs,  "ms", 300, 800);
-      document.getElementById("m-interval").innerHTML =
-        `Intervalo real: <b>${interval}s</b>`;
-      document.getElementById("m-frames").innerHTML =
-        `Frames recibidos: <b>${frames2}</b>`;
-      document.getElementById("m-sha").innerHTML =
-        `SHA: <b>${sha}</b>`;
-
-      if (currentPanel === 2) {
-        dot.className = "";
-        status.textContent = "En vivo (P2)";
-        shaLbl.textContent = "SHA: " + sha;
-        fpsLbl.textContent = `↻ ${interval}s · ${proxyMs}ms`;
-      }
-    };
-    img.onerror = () => {
-      if (currentPanel === 2) { dot.className = "offline"; }
-    };
-    img.src = `${PROXY}/api/frame2?sha=${sha}`;
-  } catch(e) {
-    // silencio — P2 puede no estar lista aún
-  }
-}
-
-// ── Arrancar ─────────────────────────────────────────────────
-checkP1();
-setInterval(checkP1,  2000);  // P1: cada 2s
-setInterval(checkP2,   300);  // P2: cada 300ms
+refresh();
+setInterval(refresh, 2000);
 </script>
 </body>
 </html>
