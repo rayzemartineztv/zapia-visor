@@ -118,7 +118,7 @@ const img1   = document.getElementById("frame1");
 const img2   = document.getElementById("frame2");
 
 let currentPanel = 1;
-let sizeP1 = 0, shaP2 = null, framesP2 = 0, lastTsP2 = Date.now();
+let shaP2 = null, framesP2 = 0, lastTsP2 = Date.now();
 let errP1 = 0, errP2 = 0;
 
 function switchPanel(n) {
@@ -131,31 +131,29 @@ function switchPanel(n) {
 
 function cls(ms, g, o) { return ms<=g?"g":ms<=o?"o":"r"; }
 
-// ── P1: GitHub raw cada 2s ────────────────────────────────────
-async function refreshP1() {
-  try {
-    const t0 = Date.now();
-    const resp = await fetch(RAW_P1 + "?t=" + t0, { cache: "no-store" });
-    if (!resp.ok) throw new Error(resp.status);
-    const blob = await resp.blob();
+// ── P1: GitHub raw — img.src directo cada 2s ─────────────────
+let p1LastLoad = 0;
+function refreshP1() {
+  const t0 = Date.now();
+  const newSrc = RAW_P1 + "?t=" + t0;
+  const tmp = new Image();
+  tmp.onload = function() {
     const ms = Date.now() - t0;
-    if (blob.size !== sizeP1) {
-      const old = img1.src;
-      img1.src = URL.createObjectURL(blob);
-      if (old.startsWith("blob:")) URL.revokeObjectURL(old);
-      sizeP1 = blob.size;
-    }
+    img1.src = newSrc;
     errP1 = 0;
+    p1LastLoad = t0;
     if (currentPanel === 1) {
       dot.className = "";
       status.textContent = "En vivo";
-      latLbl.textContent = `↻ ${ms}ms · ${(blob.size/1024).toFixed(0)}KB`;
+      latLbl.textContent = `↻ ${ms}ms`;
     }
-  } catch(e) {
+  };
+  tmp.onerror = function() {
     if (++errP1 >= 3 && currentPanel === 1) {
       dot.className = "offline"; status.textContent = "Sin señal"; latLbl.textContent = "";
     }
-  }
+  };
+  tmp.src = newSrc;
 }
 
 // ── P2: CF Workers polling 300ms ──────────────────────────────
