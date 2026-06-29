@@ -8,13 +8,13 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column}
 .hdr{background:#1e293b;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;border-bottom:1px solid #334155}
-.title{color:#f8fafc;font-size:15px;font-weight:700;letter-spacing:-.3px}
+.title{color:#f8fafc;font-size:15px;font-weight:700}
 .sub{color:#94a3b8;font-size:11px;margin-top:2px}
 .badge{background:#14532d;color:#4ade80;font-size:11px;font-weight:600;padding:5px 12px;border-radius:99px;display:flex;align-items:center;gap:6px}
 .dot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
 .wrap{flex:1;padding:8px;display:flex;flex-direction:column;align-items:center;gap:8px}
-img{max-width:100%;border-radius:8px;display:block;box-shadow:0 4px 32px rgba(0,0,0,.7);background:#1e293b}
+img{max-width:100%;border-radius:8px;display:block;box-shadow:0 4px 32px rgba(0,0,0,.7);background:#1e293b;min-height:200px}
 .stats{display:flex;gap:12px;font-size:11px;color:#64748b}
 </style>
 </head>
@@ -29,59 +29,56 @@ img{max-width:100%;border-radius:8px;display:block;box-shadow:0 4px 32px rgba(0,
 <div class="wrap">
   <img id="frame" alt="Cargando...">
   <div class="stats">
-    <div>FPS <span id="fps">—</span></div>
     <div>Latencia <span id="lat">—</span></div>
     <div>Frames <span id="cnt">0</span></div>
   </div>
 </div>
 <script>
-const GIST_ID = "1013efee7161084358c8d019bb0a9d0e";
+// Lee sha.txt (sin cache) -> carga frame.png con ese SHA (inmutable, sin cache)
+const REPO = "rayzemartineztv/zapia-visor";
+const SHA_URL = "https://raw.githubusercontent.com/" + REPO + "/main/sha.txt";
 const img   = document.getElementById("frame");
 const tsEl  = document.getElementById("ts");
-const fpsEl = document.getElementById("fps");
 const latEl = document.getElementById("lat");
 const cntEl = document.getElementById("cnt");
 
-let frames=0, prevContent="", errs=0;
-const fpsArr=[];
+let frames=0, prevSha="", errs=0;
 
 async function fetchFrame() {
   const t0 = Date.now();
   try {
-    const res = await fetch(
-      "https://api.github.com/gists/" + GIST_ID + "?t=" + t0,
-      {
-        headers:{
-          "Accept": "application/vnd.github.v3+json",
-          "Cache-Control": "no-cache"
-        },
-        cache: "no-store"
-      }
-    );
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
-    const content = (data && data.files && data.files["frame.txt"] && data.files["frame.txt"].content) || "";
-    if (content && content !== prevContent) {
-      img.src = content;
-      prevContent = content;
-      frames++;
-      cntEl.textContent = frames;
-      const lat = Date.now() - t0;
-      latEl.textContent = lat + "ms";
-      fpsArr.push(1000/(lat||1));
-      if(fpsArr.length>10) fpsArr.shift();
-      fpsEl.textContent = (fpsArr.reduce(function(a,b){return a+b;},0)/fpsArr.length).toFixed(1);
-      errs = 0;
-    }
+    // 1. Leer sha.txt con cache-bust
+    const r1 = await fetch(SHA_URL + "?t=" + t0, {cache:"no-store"});
+    if (!r1.ok) throw new Error("sha " + r1.status);
+    const sha = (await r1.text()).trim();
+    if (!sha || sha === prevSha) return;
+
+    // 2. Cargar frame.png con SHA exacto (URL inmutable - disponible al instante)
+    const frameUrl = "https://raw.githubusercontent.com/" + REPO + "/" + sha + "/frame.png";
+    const r2 = await fetch(frameUrl, {cache:"no-store"});
+    if (!r2.ok) throw new Error("frame " + r2.status);
+    const blob = await r2.blob();
+    const burl = URL.createObjectURL(blob);
+    
+    // Revocar URL anterior para liberar memoria
+    if (img._burl) URL.revokeObjectURL(img._burl);
+    img._burl = burl;
+    img.src = burl;
+    
+    prevSha = sha;
+    frames++;
+    cntEl.textContent = frames;
+    latEl.textContent = (Date.now()-t0) + "ms";
     tsEl.textContent = "Actualizado: " + new Date().toLocaleTimeString("es-CL");
+    errs = 0;
   } catch(e) {
     errs++;
-    if(errs>3) tsEl.textContent = "Sin senal — reintentando...";
+    if(errs > 3) tsEl.textContent = "Sin senal — reintentando...";
   }
 }
 
 fetchFrame();
-setInterval(fetchFrame, 1500);
+setInterval(fetchFrame, 2000);
 </script>
 </body>
 </html>
