@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=4">
+<title>Zapia — Visor en Vivo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f172a;font-family:system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+.hdr{background:#1e293b;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.t{color:#f8fafc;font-size:14px;font-weight:600}
+.s{color:#94a3b8;font-size:11px;margin-top:2px}
+.dot{display:inline-block;width:8px;height:8px;background:#22c55e;border-radius:50%;margin-right:6px;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.badge{background:#1e3a1e;color:#22c55e;font-size:11px;padding:4px 10px;border-radius:99px;display:flex;align-items:center}
+.wrap{flex:1;padding:8px;display:flex;align-items:flex-start;justify-content:center}
+img{max-width:100%;border-radius:8px;display:block;box-shadow:0 4px 24px rgba(0,0,0,.6)}
+.ft{color:#475569;font-size:10px;text-align:center;padding:8px}
+#ts{color:#64748b;font-size:10px}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div>
+    <div class="t">Zapia M&amp;A — Visor en Vivo</div>
+    <div class="s" id="ts">Conectando...</div>
+  </div>
+  <span class="badge"><span class="dot"></span>EN VIVO</span>
+</div>
+<div class="wrap">
+  <img id="frame" src="" alt="Pantalla de Zapia">
+</div>
+<div class="ft">Pellizca para zoom · actualización cada 1s</div>
+<script>
+const RAW = "https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/frame.png";
+const img = document.getElementById("frame");
+const ts  = document.getElementById("ts");
+let errs  = 0;
+
+function update() {
+  const url = RAW + "?t=" + Date.now();
+  const tmp = new Image();
+  tmp.onload = () => {
+    img.src = url;
+    errs = 0;
+    ts.textContent = "Actualizado: " + new Date().toLocaleTimeString("es-CL");
+  };
+  tmp.onerror = () => {
+    errs++;
+    if (errs > 3) ts.textContent = "Sin señal — esperando...";
+  };
+  tmp.src = url;
+}
+
+update();
+setInterval(update, 1000);
+</script>
+</body>
+</html>
