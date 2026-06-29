@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=4">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Zapia — Visor en Vivo</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -35,21 +38,28 @@ img{max-width:100%;border-radius:8px;display:block;box-shadow:0 4px 24px rgba(0,
 const RAW = "https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/frame.png";
 const img = document.getElementById("frame");
 const ts  = document.getElementById("ts");
-let errs  = 0;
+let prev = null;
+let errs = 0;
 
-function update() {
-  const url = RAW + "?t=" + Date.now();
-  const tmp = new Image();
-  tmp.onload = () => {
-    img.src = url;
+async function update() {
+  const url = RAW + "?nc=" + Date.now();
+  try {
+    const resp = await fetch(url, {
+      cache: "no-store",
+      headers: { "Pragma": "no-cache", "Cache-Control": "no-cache" }
+    });
+    if (!resp.ok) throw new Error(resp.status);
+    const blob = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    if (prev) URL.revokeObjectURL(prev);
+    prev = blobUrl;
+    img.src = blobUrl;
     errs = 0;
     ts.textContent = "Actualizado: " + new Date().toLocaleTimeString("es-CL");
-  };
-  tmp.onerror = () => {
+  } catch(e) {
     errs++;
     if (errs > 3) ts.textContent = "Sin señal — esperando...";
-  };
-  tmp.src = url;
+  }
 }
 
 update();
