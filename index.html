@@ -27,36 +27,29 @@
   }
   .tab-btn.active { background: #e74c3c; border-color: #e74c3c; color: #fff; }
   .tab-btn:hover:not(.active) { border-color: #555; color: #aaa; }
-  .badge {
-    font-size: 9px; background: #333; padding: 1px 5px;
-    border-radius: 8px; margin-left: 4px; color: #888;
-  }
+  .badge { font-size: 9px; background: #333; padding: 1px 5px; border-radius: 8px; margin-left: 4px; color: #888; }
   .tab-btn.active .badge { background: rgba(255,255,255,0.2); color: #fff; }
   #status-bar {
     width: 100%; max-width: 960px;
     display: flex; gap: 10px; font-size: 11px; color: #555;
     margin-bottom: 8px; align-items: center;
   }
-  #dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: #2ecc71; flex-shrink: 0; animation: pulse 1.5s infinite;
-  }
+  #dot { width: 7px; height: 7px; border-radius: 50%; background: #2ecc71; flex-shrink: 0; animation: pulse 1.5s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
   #dot.offline { background: #e74c3c; animation: none; }
-  #dot.lab { background: #f39c12; animation: pulse 1s infinite; }
+  #dot.lab { background: #f39c12; }
   .panel { width: 100%; max-width: 960px; display: none; }
   .panel.active { display: block; }
-  .frame-wrap {
-    background: #111; border: 1px solid #1a1a1a;
-    border-radius: 8px; overflow: hidden;
-  }
+  .frame-wrap { background: #111; border: 1px solid #1a1a1a; border-radius: 8px; overflow: hidden; }
   .frame-wrap img { width: 100%; height: auto; display: block; }
-  #p2-metrics {
+  canvas { width: 100%; height: auto; display: block; background: #080818; }
+  .metrics {
     background: #0d0d0d; border: 1px solid #1a1a1a;
     border-radius: 6px; padding: 10px 14px;
     margin-top: 8px; font-size: 11px; color: #555; line-height: 2;
+    font-family: monospace;
   }
-  #p2-metrics b { color: #888; }
+  .metrics b { color: #aaa; }
   .g { color: #2ecc71 !important; }
   .o { color: #f39c12 !important; }
   .r { color: #e74c3c !important; }
@@ -69,7 +62,7 @@
   <h1>⚡ Zapia Visor</h1>
   <div id="selector">
     <button class="tab-btn active" id="btn1" onclick="switchPanel(1)">
-      Pantalla 1 <span class="badge">OFICIAL</span>
+      Pantalla 1 <span class="badge">CANVAS 60fps</span>
     </button>
     <button class="tab-btn" id="btn2" onclick="switchPanel(2)">
       Pantalla 2 <span class="badge">CF WORKERS</span>
@@ -79,119 +72,256 @@
 
 <div id="status-bar">
   <div id="dot"></div>
-  <span id="status-text">Conectando...</span>
+  <span id="status-text">Iniciando...</span>
   <span id="latency-label"></span>
 </div>
 
-<!-- PANTALLA 1 — GitHub raw directo -->
+<!-- PANTALLA 1 — Canvas 60fps nativo -->
 <div id="panel1" class="panel active">
   <div class="frame-wrap">
-    <img id="frame1" src="" alt="Cargando..." />
+    <canvas id="canvas1" width="900" height="560"></canvas>
+  </div>
+  <div class="metrics" id="p1-metrics">
+    <b>🎨 Pantalla 1 — Canvas local (sin servidor)</b><br>
+    FPS: <b id="p1-fps">—</b> &nbsp;|&nbsp;
+    Frame: <b id="p1-frame">0</b> &nbsp;|&nbsp;
+    Ángulo: <b id="p1-angle">0°</b> &nbsp;|&nbsp;
+    Render: <b id="p1-render">—</b>ms
   </div>
 </div>
 
-<!-- PANTALLA 2 — CF Workers -->
+<!-- PANTALLA 2 — CF Workers (imagen estática actualizada por Zapia) -->
 <div id="panel2" class="panel">
   <div class="frame-wrap">
-    <img id="frame2" src="" alt="Esperando frame..." />
+    <img id="frame2" src="" alt="Esperando frame de Zapia..." style="min-height:400px;object-fit:contain;" />
   </div>
-  <div id="p2-metrics">
-    <b>⚡ Pantalla 2 — Cloudflare Workers</b><br>
-    <span id="m-poll">SHA poll: <b>—</b></span> &nbsp;|&nbsp;
-    <span id="m-frames">Frames: <b>0</b></span> &nbsp;|&nbsp;
-    <span id="m-sha">SHA: <b>—</b></span>
+  <div class="metrics" id="p2-metrics">
+    <b>⚡ Pantalla 2 — Cloudflare Workers (push desde servidor)</b><br>
+    Poll SHA: <b id="p2-poll">—</b>ms &nbsp;|&nbsp;
+    Frames recibidos: <b id="p2-frames">0</b> &nbsp;|&nbsp;
+    SHA: <b id="p2-sha">—</b><br>
+    Última actualización: <b id="p2-last">—</b>
   </div>
 </div>
 
-<div id="footer">rayzemartineztv.github.io/zapia-visor · P1: GitHub 2s · P2: CF Workers 400ms poll</div>
+<div id="footer">P1: Canvas JS 60fps nativo · P2: Cloudflare Workers push ~400ms · rayzemartineztv.github.io/zapia-visor</div>
 
 <script>
-const RAW_P1    = "https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/frame.png";
-const CF_SHA    = "https://zapia-visor-p2.rayzecontacto.workers.dev/sha2";
-const CF_FRAME  = "https://zapia-visor-p2.rayzecontacto.workers.dev/frame2";
+// ══════════════════════════════════════════════════════
+// PANTALLA 1 — Corazón 3D en Canvas, 60fps nativos
+// ══════════════════════════════════════════════════════
+const canvas = document.getElementById('canvas1');
+const ctx2d  = canvas.getContext('2d');
+const CW = canvas.width, CH = canvas.height;
 
-const dot    = document.getElementById("dot");
-const status = document.getElementById("status-text");
-const latLbl = document.getElementById("latency-label");
-const img1   = document.getElementById("frame1");
-const img2   = document.getElementById("frame2");
+let p1Frame = 0, p1FPS = 0, p1LastTime = performance.now();
+let p1FPSFrames = 0, p1FPSTimer = performance.now();
 
-let currentPanel = 1;
-let shaP2 = null, framesP2 = 0;
-let errP1 = 0, errP2 = 0;
-
-function switchPanel(n) {
-  currentPanel = n;
-  document.getElementById("panel1").classList.toggle("active", n===1);
-  document.getElementById("panel2").classList.toggle("active", n===2);
-  document.getElementById("btn1").classList.toggle("active", n===1);
-  document.getElementById("btn2").classList.toggle("active", n===2);
+function heartPoint(t) {
+  const x = 16 * Math.pow(Math.sin(t), 3);
+  const y = 13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t);
+  const z = 8 * Math.sin(t) * Math.cos(t);
+  return [x * 0.3, y * 0.3, z * 0.3];
 }
 
-function cls(ms, g, o) { return ms<=g?"g":ms<=o?"o":"r"; }
-
-// ── P1: img.src directo con timestamp cada 2s ─────────────────
-let errP1count = 0;
-function refreshP1() {
-  const t0 = Date.now();
-  const newSrc = RAW_P1 + "?t=" + t0;
-  const tmp = new Image();
-  tmp.onload = function() {
-    img1.src = newSrc;
-    errP1count = 0;
-    if (currentPanel === 1) {
-      dot.className = "";
-      status.textContent = "En vivo";
-      latLbl.textContent = "↻ " + (Date.now()-t0) + "ms";
-    }
-  };
-  tmp.onerror = function() {
-    if (++errP1count >= 3 && currentPanel === 1) {
-      dot.className = "offline"; status.textContent = "Sin señal"; latLbl.textContent = "";
-    }
-  };
-  tmp.src = newSrc;
+function rotateY(x, y, z, a) {
+  return [x*Math.cos(a) + z*Math.sin(a), y, -x*Math.sin(a) + z*Math.cos(a)];
 }
 
-// ── P2: poll SHA cada 400ms, si cambia → img.src directo ──────
-let errP2count = 0;
+function project(x, y, z, cx, cy) {
+  const sc = 500 / (500 + z * 28);
+  return [cx + x*sc*58, cy - y*sc*58, sc];
+}
+
+function drawP1(ts) {
+  const now = performance.now();
+  const dt  = now - p1LastTime;
+  p1LastTime = now;
+
+  // FPS counter
+  p1FPSFrames++;
+  if (now - p1FPSTimer >= 500) {
+    p1FPS = Math.round(p1FPSFrames * 1000 / (now - p1FPSTimer));
+    p1FPSFrames = 0;
+    p1FPSTimer = now;
+  }
+
+  const t0render = performance.now();
+
+  // Limpiar con fade (motion blur suave)
+  ctx2d.fillStyle = 'rgba(8,8,24,0.35)';
+  ctx2d.fillRect(0, 0, CW, CH);
+
+  const angle = (p1Frame * 0.018) % (2 * Math.PI); // 1 vuelta cada ~350 frames (~6s a 60fps)
+  const beat  = 1.0 + 0.07 * Math.sin(p1Frame * 0.18);
+  const cx = CW / 2, cy = CH / 2 + 10;
+
+  // Generar puntos 3D
+  const STEPS = 360;
+  const pts3 = [];
+  for (let i = 0; i <= STEPS; i++) {
+    const t = 2 * Math.PI * i / STEPS;
+    let [x, y, z] = heartPoint(t);
+    [x, y, z] = rotateY(x*beat, y*beat, z*beat, angle);
+    pts3.push([x, y, z]);
+  }
+
+  // Proyectar
+  const proj = pts3.map(([x,y,z]) => project(x, y, z, cx, cy));
+
+  // Ordenar segmentos por Z (painter's algorithm)
+  const segs = [];
+  for (let i = 0; i < STEPS; i++) {
+    const midZ = (pts3[i][2] + pts3[i+1][2]) / 2;
+    segs.push([midZ, i]);
+  }
+  segs.sort((a,b) => a[0] - b[0]);
+
+  // Color base pulsante
+  const rv = 180 + 75 * Math.sin(p1Frame * 0.04);
+  const bv = 40  + 65 * Math.sin(p1Frame * 0.033);
+
+  // Dibujar segmentos con depth shading
+  for (const [midZ, i] of segs) {
+    const depth = Math.max(0, Math.min(1, (midZ + 3.5) / 7));
+    const r = Math.round(rv * (0.25 + 0.75 * depth));
+    const g = Math.round(10 * depth);
+    const b = Math.round(bv * (0.2 + 0.8 * depth));
+    const [px1, py1] = proj[i];
+    const [px2, py2] = proj[i+1];
+    const w = Math.max(1, (1 + 3.5 * depth));
+    ctx2d.beginPath();
+    ctx2d.strokeStyle = `rgb(${r},${g},${b})`;
+    ctx2d.lineWidth = w;
+    ctx2d.moveTo(px1, py1);
+    ctx2d.lineTo(px2, py2);
+    ctx2d.stroke();
+  }
+
+  // Highlight puntos frontales
+  for (const [midZ, i] of segs.slice(-50)) {
+    const [px, py] = proj[i];
+    ctx2d.beginPath();
+    ctx2d.arc(px, py, 1.5, 0, Math.PI*2);
+    ctx2d.fillStyle = 'rgba(255,180,200,0.7)';
+    ctx2d.fill();
+  }
+
+  // Partículas orbitando
+  for (let k = 0; k < 14; k++) {
+    const a2 = angle + k * Math.PI / 7 + p1Frame * 0.045;
+    const r2 = 6.2 + 0.9 * Math.sin(p1Frame * 0.07 + k);
+    const oy = 1.8 * Math.sin(p1Frame * 0.055 + k * 0.8);
+    const [ppx, ppy, psc] = project(r2*Math.cos(a2), oy, r2*Math.sin(a2), cx, cy);
+    const sz = Math.max(1, (2 + 3*psc) * (0.5 + 0.5*Math.sin(p1Frame*0.12+k)));
+    const pr = Math.min(255, Math.round((60 + k*14) * psc * 1.5));
+    const pg = Math.min(255, Math.round((25 + k*18) * psc * 1.5));
+    const pb = Math.min(255, Math.round(Math.max(0, 240-k*17) * psc * 1.5));
+    ctx2d.beginPath();
+    ctx2d.arc(ppx, ppy, sz, 0, Math.PI*2);
+    ctx2d.fillStyle = `rgb(${pr},${pg},${pb})`;
+    ctx2d.fill();
+  }
+
+  // Barra de progreso (vuelta completa)
+  const angDeg = ((p1Frame * 0.018) % (2*Math.PI)) / (2*Math.PI) * 360;
+  const barW = (angDeg / 360) * (CW - 40);
+  ctx2d.fillStyle = '#111';
+  ctx2d.fillRect(20, CH-22, CW-40, 10);
+  const grad = ctx2d.createLinearGradient(20, 0, 20+barW, 0);
+  grad.addColorStop(0, `rgb(${Math.round(rv*0.5)},10,${Math.round(bv*0.4)})`);
+  grad.addColorStop(1, `rgb(${Math.round(rv)},20,${Math.round(bv)})`);
+  ctx2d.fillStyle = grad;
+  ctx2d.fillRect(21, CH-21, Math.max(1, barW), 8);
+
+  // HUD texto
+  const renderMs = (performance.now() - t0render).toFixed(1);
+  ctx2d.font = 'bold 13px monospace';
+  ctx2d.fillStyle = '#000';
+  ctx2d.fillText(`CANVAS LOCAL | ${angDeg.toFixed(1)}° | ${p1FPS} FPS | render: ${renderMs}ms`, 21, 16);
+  ctx2d.fillStyle = '#ffd700';
+  ctx2d.fillText(`CANVAS LOCAL | ${angDeg.toFixed(1)}° | ${p1FPS} FPS | render: ${renderMs}ms`, 20, 15);
+
+  // Actualizar HUD externo
+  document.getElementById('p1-fps').textContent = p1FPS;
+  document.getElementById('p1-frame').textContent = p1Frame;
+  document.getElementById('p1-angle').textContent = angDeg.toFixed(1) + '°';
+  document.getElementById('p1-render').textContent = renderMs;
+
+  if (currentPanel === 1) {
+    document.getElementById('dot').className = 'lab';
+    document.getElementById('status-text').textContent = `Canvas vivo · ${p1FPS} FPS`;
+    document.getElementById('latency-label').textContent = `render ${renderMs}ms`;
+  }
+
+  p1Frame++;
+  requestAnimationFrame(drawP1);
+}
+
+// Arrancar P1
+requestAnimationFrame(drawP1);
+
+
+// ══════════════════════════════════════════════════════
+// PANTALLA 2 — CF Workers poll
+// ══════════════════════════════════════════════════════
+const CF_SHA   = "https://zapia-visor-p2.rayzecontacto.workers.dev/sha2";
+const CF_FRAME = "https://zapia-visor-p2.rayzecontacto.workers.dev/frame2";
+const img2     = document.getElementById('frame2');
+
+let shaP2 = null, framesP2 = 0, errP2 = 0;
+
 async function refreshP2() {
   try {
     const t0 = Date.now();
-    const r = await fetch(CF_SHA + "?t=" + t0, { cache: "no-store" });
+    const r   = await fetch(CF_SHA + "?t=" + t0, { cache: "no-store" });
     const sha = (await r.text()).trim();
-    const cfMs = Date.now() - t0;
+    const ms  = Date.now() - t0;
+
+    document.getElementById('p2-poll').textContent = ms;
+
     if (!sha || sha === "none" || sha === shaP2) return;
     shaP2 = sha;
     framesP2++;
-    // Cargar imagen via img.src directo (no blob, más compatible)
+
     const imgSrc = CF_FRAME + "?sha=" + sha + "&t=" + Date.now();
     const tmp = new Image();
-    tmp.onload = function() {
-      img2.src = imgSrc;
-    };
+    tmp.onload = () => { img2.src = imgSrc; };
     tmp.src = imgSrc;
-    document.getElementById("m-poll").innerHTML  = "SHA poll: <b class='" + cls(cfMs,200,500) + "'>" + cfMs + "ms</b>";
-    document.getElementById("m-frames").innerHTML = "Frames: <b>" + framesP2 + "</b>";
-    document.getElementById("m-sha").innerHTML   = "SHA: <b>" + sha + "</b>";
-    errP2count = 0;
+
+    document.getElementById('p2-frames').textContent = framesP2;
+    document.getElementById('p2-sha').textContent    = sha.slice(-8);
+    document.getElementById('p2-last').textContent   = new Date().toLocaleTimeString();
+    errP2 = 0;
+
     if (currentPanel === 2) {
-      dot.className = "lab";
-      status.textContent = "En vivo · CF Workers";
-      latLbl.textContent = "⚡ " + cfMs + "ms";
+      document.getElementById('dot').className = '';
+      document.getElementById('status-text').textContent = 'CF Workers · en vivo';
+      document.getElementById('latency-label').textContent = `⚡ ${ms}ms SHA poll`;
     }
   } catch(e) {
-    if (++errP2count >= 5 && currentPanel === 2) {
-      dot.className = "offline"; status.textContent = "Sin señal P2"; latLbl.textContent = "";
+    if (++errP2 >= 5 && currentPanel === 2) {
+      document.getElementById('dot').className = 'offline';
+      document.getElementById('status-text').textContent = 'Sin señal P2';
     }
   }
 }
 
-// Arrancar
-refreshP1();
+setInterval(refreshP2, 400);
 refreshP2();
-setInterval(refreshP1, 2000);
-setInterval(refreshP2,  400);
+
+
+// ══════════════════════════════════════════════════════
+// SELECTOR
+// ══════════════════════════════════════════════════════
+let currentPanel = 1;
+function switchPanel(n) {
+  currentPanel = n;
+  document.getElementById('panel1').classList.toggle('active', n===1);
+  document.getElementById('panel2').classList.toggle('active', n===2);
+  document.getElementById('btn1').classList.toggle('active', n===1);
+  document.getElementById('btn2').classList.toggle('active', n===2);
+}
 </script>
 </body>
 </html>
