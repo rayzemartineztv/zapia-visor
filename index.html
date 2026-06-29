@@ -2,83 +2,128 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
-<title>Zapia M&A — Visor en Vivo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Zapia Visor — Live</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column}
-.hdr{background:#1e293b;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;border-bottom:1px solid #334155}
-.title{color:#f8fafc;font-size:15px;font-weight:700}
-.sub{color:#94a3b8;font-size:11px;margin-top:2px}
-.badge{background:#14532d;color:#4ade80;font-size:11px;font-weight:600;padding:5px 12px;border-radius:99px;display:flex;align-items:center;gap:6px}
-.dot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:pulse 1.2s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
-.wrap{flex:1;padding:8px;display:flex;flex-direction:column;align-items:center;gap:8px}
-img{max-width:100%;border-radius:8px;display:block;box-shadow:0 4px 32px rgba(0,0,0,.7);background:#1e293b;min-height:200px}
-.stats{display:flex;gap:12px;font-size:11px;color:#64748b}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+  }
+  h1 {
+    font-size: 15px;
+    color: #aaa;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  #status-bar {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 10px;
+    align-items: center;
+  }
+  #dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #2ecc71;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  #dot.offline { background: #e74c3c; animation: none; }
+  #frame-container {
+    width: 100%;
+    max-width: 960px;
+    background: #111;
+    border: 1px solid #222;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  #frame {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  #info {
+    font-size: 11px;
+    color: #444;
+    margin-top: 6px;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
-<div class="hdr">
-  <div>
-    <div class="title">Zapia M&A — Visor en Vivo</div>
-    <div class="sub" id="ts">Conectando...</div>
-  </div>
-  <div class="badge"><div class="dot"></div>EN VIVO</div>
+<h1>⚡ Zapia Visor — En vivo</h1>
+<div id="status-bar">
+  <div id="dot"></div>
+  <span id="status-text">Conectando...</span>
+  <span id="sha-label"></span>
+  <span id="fps-label"></span>
 </div>
-<div class="wrap">
-  <img id="frame" alt="Cargando...">
-  <div class="stats">
-    <div>Latencia <span id="lat">—</span></div>
-    <div>Frames <span id="cnt">0</span></div>
-  </div>
+<div id="frame-container">
+  <img id="frame" src="" alt="Cargando..." />
 </div>
+<div id="info">zapia-visor-proxy.vercel.app — sin caché</div>
+
 <script>
-// Lee sha.txt (sin cache) -> carga frame.png con ese SHA (inmutable, sin cache)
-const REPO = "rayzemartineztv/zapia-visor";
-const SHA_URL = "https://raw.githubusercontent.com/" + REPO + "/main/sha.txt";
-const img   = document.getElementById("frame");
-const tsEl  = document.getElementById("ts");
-const latEl = document.getElementById("lat");
-const cntEl = document.getElementById("cnt");
+const PROXY = "https://zapia-visor-proxy.vercel.app";
+let lastSha = null;
+let updateCount = 0;
+let lastUpdateTime = Date.now();
 
-let frames=0, prevSha="", errs=0;
+const frameEl  = document.getElementById("frame");
+const dotEl    = document.getElementById("dot");
+const statusEl = document.getElementById("status-text");
+const shaEl    = document.getElementById("sha-label");
+const fpsEl    = document.getElementById("fps-label");
 
-async function fetchFrame() {
-  const t0 = Date.now();
+async function checkUpdate() {
   try {
-    // 1. Leer sha.txt con cache-bust
-    const r1 = await fetch(SHA_URL + "?t=" + t0, {cache:"no-store"});
-    if (!r1.ok) throw new Error("sha " + r1.status);
-    const sha = (await r1.text()).trim();
-    if (!sha || sha === prevSha) return;
+    const r = await fetch(PROXY + "/api/sha?t=" + Date.now());
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const sha = await r.text();
 
-    // 2. Cargar frame.png con SHA exacto (URL inmutable - disponible al instante)
-    const frameUrl = "https://raw.githubusercontent.com/" + REPO + "/" + sha + "/frame.png";
-    const r2 = await fetch(frameUrl, {cache:"no-store"});
-    if (!r2.ok) throw new Error("frame " + r2.status);
-    const blob = await r2.blob();
-    const burl = URL.createObjectURL(blob);
-    
-    // Revocar URL anterior para liberar memoria
-    if (img._burl) URL.revokeObjectURL(img._burl);
-    img._burl = burl;
-    img.src = burl;
-    
-    prevSha = sha;
-    frames++;
-    cntEl.textContent = frames;
-    latEl.textContent = (Date.now()-t0) + "ms";
-    tsEl.textContent = "Actualizado: " + new Date().toLocaleTimeString("es-CL");
-    errs = 0;
-  } catch(e) {
-    errs++;
-    if(errs > 3) tsEl.textContent = "Sin senal — reintentando...";
+    if (sha !== lastSha) {
+      lastSha = sha;
+      // Cargar la nueva imagen
+      const newImg = new Image();
+      newImg.onload = () => {
+        frameEl.src = newImg.src;
+        updateCount++;
+        const now = Date.now();
+        const elapsed = (now - lastUpdateTime) / 1000;
+        lastUpdateTime = now;
+        fpsEl.textContent = elapsed < 60 ? `↻ hace ${Math.round(elapsed)}s` : "";
+        dotEl.classList.remove("offline");
+        statusEl.textContent = "En vivo";
+        shaEl.textContent = "SHA: " + sha;
+      };
+      newImg.onerror = () => {
+        statusEl.textContent = "Error cargando imagen";
+        dotEl.classList.add("offline");
+      };
+      newImg.src = PROXY + "/api/frame?sha=" + sha;
+    }
+  } catch (e) {
+    dotEl.classList.add("offline");
+    statusEl.textContent = "Sin señal (" + e.message + ")";
   }
 }
 
-fetchFrame();
-setInterval(fetchFrame, 2000);
+// Polling cada 2 segundos
+checkUpdate();
+setInterval(checkUpdate, 2000);
 </script>
 </body>
 </html>
