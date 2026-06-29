@@ -87,14 +87,14 @@ canvas{display:block;width:100%;height:100%}
   </div>
   <!-- VS -->
   <div id="screen-vs" class="screen">
-    <div class="half">
-      <canvas id="c3"></canvas>
-      <div class="badge badge-p1" style="top:8px;left:8px;font-size:9px">P1 · DORADO 60FPS</div>
+    <div class="half" style="position:relative;overflow:hidden">
+      <canvas id="c3" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+      <div class="badge badge-p1" style="top:8px;left:8px;font-size:9px;z-index:5">P1 · DORADO 60FPS</div>
     </div>
     <div class="divider"></div>
-    <div class="half" style="background:#07070f">
+    <div class="half" style="background:#07070f;position:relative;overflow:hidden">
       <img id="p2-img-vs" src="" style="max-width:100%;max-height:100%;object-fit:contain" alt=""/>
-      <div class="badge badge-p2" style="top:8px;left:8px;font-size:9px">P2 · ZAPIA SCREEN</div>
+      <div class="badge badge-p2" style="top:8px;left:8px;font-size:9px;z-index:5">P2 · ZAPIA SCREEN</div>
     </div>
   </div>
   <!-- P3 -->
