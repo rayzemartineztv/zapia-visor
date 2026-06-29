@@ -83,33 +83,32 @@
   <span id="latency-label"></span>
 </div>
 
-<!-- PANTALLA 1 — OFICIAL (GitHub raw directo) -->
+<!-- PANTALLA 1 — GitHub raw directo -->
 <div id="panel1" class="panel active">
   <div class="frame-wrap">
     <img id="frame1" src="" alt="Cargando..." />
   </div>
 </div>
 
-<!-- PANTALLA 2 — CF WORKERS (push directo ~65ms) -->
+<!-- PANTALLA 2 — CF Workers -->
 <div id="panel2" class="panel">
   <div class="frame-wrap">
     <img id="frame2" src="" alt="Esperando frame..." />
   </div>
   <div id="p2-metrics">
-    <b>⚡ Pantalla 2 — Cloudflare Workers</b> · Push directo sin GitHub<br>
-    <span id="m-poll">Latencia CF: <b>—</b></span> &nbsp;|&nbsp;
-    <span id="m-load">Carga img: <b>—</b></span> &nbsp;|&nbsp;
-    <span id="m-interval">Intervalo: <b>—</b></span><br>
+    <b>⚡ Pantalla 2 — Cloudflare Workers</b><br>
+    <span id="m-poll">SHA poll: <b>—</b></span> &nbsp;|&nbsp;
     <span id="m-frames">Frames: <b>0</b></span> &nbsp;|&nbsp;
     <span id="m-sha">SHA: <b>—</b></span>
   </div>
 </div>
 
-<div id="footer">rayzemartineztv.github.io/zapia-visor · P1: GitHub raw 2s · P2: CF Workers 300ms</div>
+<div id="footer">rayzemartineztv.github.io/zapia-visor · P1: GitHub 2s · P2: CF Workers 400ms poll</div>
 
 <script>
-const RAW_P1   = "https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/frame.png";
-const CF_WORKER = "https://zapia-visor-p2.rayzecontacto.workers.dev";
+const RAW_P1    = "https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/frame.png";
+const CF_SHA    = "https://zapia-visor-p2.rayzecontacto.workers.dev/sha2";
+const CF_FRAME  = "https://zapia-visor-p2.rayzecontacto.workers.dev/frame2";
 
 const dot    = document.getElementById("dot");
 const status = document.getElementById("status-text");
@@ -118,7 +117,7 @@ const img1   = document.getElementById("frame1");
 const img2   = document.getElementById("frame2");
 
 let currentPanel = 1;
-let shaP2 = null, framesP2 = 0, lastTsP2 = Date.now();
+let shaP2 = null, framesP2 = 0;
 let errP1 = 0, errP2 = 0;
 
 function switchPanel(n) {
@@ -131,76 +130,68 @@ function switchPanel(n) {
 
 function cls(ms, g, o) { return ms<=g?"g":ms<=o?"o":"r"; }
 
-// ── P1: GitHub raw — img.src directo cada 2s ─────────────────
-let p1LastLoad = 0;
+// ── P1: img.src directo con timestamp cada 2s ─────────────────
+let errP1count = 0;
 function refreshP1() {
   const t0 = Date.now();
   const newSrc = RAW_P1 + "?t=" + t0;
   const tmp = new Image();
   tmp.onload = function() {
-    const ms = Date.now() - t0;
     img1.src = newSrc;
-    errP1 = 0;
-    p1LastLoad = t0;
+    errP1count = 0;
     if (currentPanel === 1) {
       dot.className = "";
       status.textContent = "En vivo";
-      latLbl.textContent = `↻ ${ms}ms`;
+      latLbl.textContent = "↻ " + (Date.now()-t0) + "ms";
     }
   };
   tmp.onerror = function() {
-    if (++errP1 >= 3 && currentPanel === 1) {
+    if (++errP1count >= 3 && currentPanel === 1) {
       dot.className = "offline"; status.textContent = "Sin señal"; latLbl.textContent = "";
     }
   };
   tmp.src = newSrc;
 }
 
-// ── P2: CF Workers polling 300ms ──────────────────────────────
+// ── P2: poll SHA cada 400ms, si cambia → img.src directo ──────
+let errP2count = 0;
 async function refreshP2() {
   try {
     const t0 = Date.now();
-    const r = await fetch(CF_WORKER + "/sha2?t=" + t0, { cache: "no-store" });
-    const sha = await r.text();
+    const r = await fetch(CF_SHA + "?t=" + t0, { cache: "no-store" });
+    const sha = (await r.text()).trim();
     const cfMs = Date.now() - t0;
-
-    if (sha === "none" || sha === shaP2) return;
+    if (!sha || sha === "none" || sha === shaP2) return;
     shaP2 = sha;
-
-    const tImg = Date.now();
-    const blob = await (await fetch(CF_WORKER + "/frame2?sha=" + sha, { cache: "no-store" })).blob();
-    const loadMs = Date.now() - tImg;
-    const interval = ((Date.now() - lastTsP2) / 1000).toFixed(2);
-    lastTsP2 = Date.now();
     framesP2++;
-
-    const old = img2.src;
-    img2.src = URL.createObjectURL(blob);
-    if (old.startsWith("blob:")) URL.revokeObjectURL(old);
-
-    document.getElementById("m-poll").innerHTML     = `Latencia CF: <b class="${cls(cfMs,100,300)}">${cfMs}ms</b>`;
-    document.getElementById("m-load").innerHTML     = `Carga img: <b class="${cls(loadMs,200,600)}">${loadMs}ms</b>`;
-    document.getElementById("m-interval").innerHTML = `Intervalo: <b>${interval}s</b>`;
-    document.getElementById("m-frames").innerHTML   = `Frames: <b>${framesP2}</b>`;
-    document.getElementById("m-sha").innerHTML      = `SHA: <b>${sha}</b>`;
-
-    errP2 = 0;
+    // Cargar imagen via img.src directo (no blob, más compatible)
+    const imgSrc = CF_FRAME + "?sha=" + sha + "&t=" + Date.now();
+    const tmp = new Image();
+    tmp.onload = function() {
+      img2.src = imgSrc;
+    };
+    tmp.src = imgSrc;
+    document.getElementById("m-poll").innerHTML  = "SHA poll: <b class='" + cls(cfMs,200,500) + "'>" + cfMs + "ms</b>";
+    document.getElementById("m-frames").innerHTML = "Frames: <b>" + framesP2 + "</b>";
+    document.getElementById("m-sha").innerHTML   = "SHA: <b>" + sha + "</b>";
+    errP2count = 0;
     if (currentPanel === 2) {
       dot.className = "lab";
-      status.textContent = "En vivo · P2 Workers";
-      latLbl.textContent = `⚡ ${cfMs}ms CF · ${loadMs}ms img`;
+      status.textContent = "En vivo · CF Workers";
+      latLbl.textContent = "⚡ " + cfMs + "ms";
     }
   } catch(e) {
-    if (++errP2 >= 5 && currentPanel === 2) {
+    if (++errP2count >= 5 && currentPanel === 2) {
       dot.className = "offline"; status.textContent = "Sin señal P2"; latLbl.textContent = "";
     }
   }
 }
 
 // Arrancar
-refreshP1(); refreshP2();
+refreshP1();
+refreshP2();
 setInterval(refreshP1, 2000);
-setInterval(refreshP2,  300);
+setInterval(refreshP2,  400);
 </script>
 </body>
 </html>
