@@ -18,16 +18,16 @@
     justify-content: space-between; margin-bottom: 10px;
   }
   h1 { font-size: 14px; color: #666; letter-spacing: 1px; text-transform: uppercase; }
-  #selector { display: flex; gap: 6px; }
+  #selector { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
   .tab-btn {
-    padding: 5px 14px; border-radius: 20px;
+    padding: 5px 12px; border-radius: 20px;
     border: 1px solid #333; background: #111; color: #555;
-    font-size: 12px; cursor: pointer; transition: all 0.2s;
+    font-size: 11px; cursor: pointer; transition: all 0.2s;
     font-family: 'Segoe UI', sans-serif;
   }
   .tab-btn.active { background: #e74c3c; border-color: #e74c3c; color: #fff; }
   .tab-btn:hover:not(.active) { border-color: #555; color: #aaa; }
-  .badge { font-size: 9px; background: #333; padding: 1px 5px; border-radius: 8px; margin-left: 4px; color: #888; }
+  .badge { font-size: 9px; background: #333; padding: 1px 5px; border-radius: 8px; margin-left: 3px; color: #888; }
   .tab-btn.active .badge { background: rgba(255,255,255,0.2); color: #fff; }
   #status-bar {
     width: 100%; max-width: 960px;
@@ -36,15 +36,12 @@
   }
   #dot { width: 7px; height: 7px; border-radius: 50%; background: #2ecc71; flex-shrink: 0; animation: pulse 1.5s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
   .panel { width: 100%; max-width: 960px; display: none; }
   .panel.active { display: block; }
 
   /* Vista lado a lado */
-  #panel-both {
-    width: 100%; max-width: 960px;
-    display: none;
-    gap: 8px;
-  }
+  #panel-both { width: 100%; max-width: 960px; display: none; gap: 6px; }
   #panel-both.active { display: flex; }
   .side {
     flex: 1; min-width: 0;
@@ -52,31 +49,49 @@
     overflow: hidden; display: flex; flex-direction: column;
   }
   .side-label {
-    font-size: 10px; color: #555; text-align: center;
-    padding: 5px; border-bottom: 1px solid #1a1a1a; text-transform: uppercase; letter-spacing: 1px;
+    font-size: 10px; text-align: center;
+    padding: 5px; border-bottom: 1px solid #1a1a1a;
+    text-transform: uppercase; letter-spacing: 1px;
   }
-  .side-label.gold { color: #f39c12; }
-  .side-label.blue { color: #3498db; }
+  .gold { color: #f39c12; }
+  .blue { color: #3498db; }
+  .green { color: #2ecc71; }
+
   canvas { width: 100%; height: auto; display: block; background: #080818; }
   .metrics {
     background: #0d0d0d; border-top: 1px solid #111;
-    padding: 6px 10px; font-size: 10px; color: #555;
+    padding: 5px 10px; font-size: 10px; color: #555;
     font-family: monospace; line-height: 1.8;
   }
   .metrics b { color: #999; }
-  .g { color: #2ecc71 !important; }
-  .o { color: #f39c12 !important; }
+
+  /* YouTube embed */
+  .yt-wrap {
+    position: relative; width: 100%; padding-top: 56.25%;
+    background: #000; border-radius: 0;
+  }
+  .yt-wrap iframe {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%; border: none;
+  }
+  .yt-label {
+    background: #0a0a0a; padding: 6px 12px;
+    font-size: 10px; color: #555; font-family: monospace;
+    border-top: 1px solid #111;
+  }
+
   #footer { font-size: 10px; color: #222; margin-top: 8px; text-align: center; }
 </style>
 </head>
 <body>
 
 <div id="header">
-  <h1>⚡ Zapia Visor — Comparativa</h1>
+  <h1>⚡ Zapia Visor</h1>
   <div id="selector">
-    <button class="tab-btn" id="btn1" onclick="switchPanel(1)">P1 <span class="badge">SOLO</span></button>
-    <button class="tab-btn" id="btn2" onclick="switchPanel(2)">P2 <span class="badge">SOLO</span></button>
+    <button class="tab-btn" id="btn1" onclick="switchPanel(1)">P1 <span class="badge">CANVAS</span></button>
+    <button class="tab-btn" id="btn2" onclick="switchPanel(2)">P2 <span class="badge">CANVAS</span></button>
     <button class="tab-btn active" id="btnB" onclick="switchPanel(3)">Ambas <span class="badge">VS</span></button>
+    <button class="tab-btn" id="btn3" onclick="switchPanel(4)">P3 <span class="badge">YouTube 8K</span></button>
   </div>
 </div>
 
@@ -91,6 +106,7 @@
   <div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;overflow:hidden;">
     <canvas id="c1solo" width="900" height="520"></canvas>
   </div>
+  <div class="metrics">P1 · Canvas A — FPS: <b id="fps1s">—</b> · Frame: <b id="frm1s">0</b> · Render: <b id="rnd1s">—</b>ms</div>
 </div>
 
 <!-- P2 solo -->
@@ -98,36 +114,48 @@
   <div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;overflow:hidden;">
     <canvas id="c2solo" width="900" height="520"></canvas>
   </div>
+  <div class="metrics">P2 · Canvas B — FPS: <b id="fps2s">—</b> · Frame: <b id="frm2s">0</b> · Render: <b id="rnd2s">—</b>ms</div>
 </div>
 
-<!-- AMBAS lado a lado -->
+<!-- AMBAS VS -->
 <div id="panel-both" class="active">
   <div class="side">
-    <div class="side-label gold">⬛ Pantalla 1 — Canvas A</div>
-    <canvas id="c1" width="440" height="480"></canvas>
-    <div class="metrics">
-      FPS: <b id="fps1" class="g">—</b> &nbsp;|&nbsp;
-      Frame: <b id="frm1">0</b> &nbsp;|&nbsp;
-      Render: <b id="rnd1">—</b>ms
-    </div>
+    <div class="side-label gold">▶ Pantalla 1 — Canvas A</div>
+    <canvas id="c1" width="440" height="460"></canvas>
+    <div class="metrics">FPS: <b id="fps1" class="gold">—</b> &nbsp;|&nbsp; Frame: <b id="frm1">0</b> &nbsp;|&nbsp; Render: <b id="rnd1">—</b>ms</div>
   </div>
   <div class="side">
-    <div class="side-label blue">⬛ Pantalla 2 — Canvas B</div>
-    <canvas id="c2" width="440" height="480"></canvas>
-    <div class="metrics">
-      FPS: <b id="fps2" class="g">—</b> &nbsp;|&nbsp;
-      Frame: <b id="frm2">0</b> &nbsp;|&nbsp;
-      Render: <b id="rnd2">—</b>ms
+    <div class="side-label blue">▶ Pantalla 2 — Canvas B</div>
+    <canvas id="c2" width="440" height="460"></canvas>
+    <div class="metrics">FPS: <b id="fps2" class="blue">—</b> &nbsp;|&nbsp; Frame: <b id="frm2">0</b> &nbsp;|&nbsp; Render: <b id="rnd2">—</b>ms</div>
+  </div>
+</div>
+
+<!-- P3 — YouTube 8K -->
+<div id="panel3" class="panel">
+  <div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;overflow:hidden;">
+    <div class="yt-wrap">
+      <iframe
+        id="yt-player"
+        src="https://www.youtube.com/embed/epbtOnRgA4c?autoplay=1&vq=hd2160&rel=0&modestbranding=1&playsinline=1"
+        allow="autoplay; fullscreen; picture-in-picture"
+        allowfullscreen>
+      </iframe>
+    </div>
+    <div class="yt-label green">
+      🎬 P3 — YouTube 8K/4K · epbtOnRgA4c · Calidad máxima disponible según tu conexión · Cambia calidad manualmente en el player → ⚙️ → Calidad → 4K/8K
     </div>
   </div>
 </div>
 
 <div id="footer">
-  P1 y P2 corren el mismo motor canvas · comparativa fluidez visual real · rayzemartineztv.github.io/zapia-visor
+  P1 · P2: Canvas JS 60fps nativo · P3: YouTube embed máx calidad · rayzemartineztv.github.io/zapia-visor
 </div>
 
 <script>
-// ── Corazón 3D — motor compartido ────────────────────────────
+const VIDEO_ID = 'epbtOnRgA4c';
+
+// ── Motor corazón 3D ─────────────────────────────────────────
 function heartPoint(t) {
   return [
     16 * Math.pow(Math.sin(t), 3) * 0.3,
@@ -143,10 +171,11 @@ function proj(x, y, z, cx, cy) {
   return [cx+x*sc*58, cy-y*sc*58, sc];
 }
 
-function makeHeart(canvasId, fpsId, frmId, rndId, speedMult, colorOffset, label) {
-  const cv  = document.getElementById(canvasId);
+function makeHeart(canvasId, fpsId, frmId, rndId, colorOffset, label) {
+  const cv = document.getElementById(canvasId);
+  if (!cv) return;
   const ctx = cv.getContext('2d');
-  const CW  = cv.width, CH = cv.height;
+  const CW = cv.width, CH = cv.height;
   let fn = 0, fps = 0, fpsFrames = 0, fpsTimer = performance.now();
   const STEPS = 340;
 
@@ -158,29 +187,25 @@ function makeHeart(canvasId, fpsId, frmId, rndId, speedMult, colorOffset, label)
       fpsFrames = 0; fpsTimer = now;
       if (fpsId) document.getElementById(fpsId).textContent = fps;
     }
-
     const t0 = performance.now();
 
-    // Fade trail
     ctx.fillStyle = 'rgba(8,8,24,0.30)';
     ctx.fillRect(0, 0, CW, CH);
 
-    const angle = (fn * 0.018 * speedMult + colorOffset) % (2*Math.PI);
+    const angle = (fn * 0.018) % (2*Math.PI);
     const beat  = 1.0 + 0.08 * Math.sin(fn * 0.18);
     const cx = CW/2, cy = CH/2 + 15;
 
     const pts3 = [];
-    for (let i=0; i<=STEPS; i++) {
+    for (let i = 0; i <= STEPS; i++) {
       const t = 2*Math.PI*i/STEPS;
       let [x,y,z] = heartPoint(t);
-      [x,y,z] = rotateY(x*beat,y*beat,z*beat,angle);
+      [x,y,z] = rotateY(x*beat, y*beat, z*beat, angle + colorOffset);
       pts3.push([x,y,z]);
     }
-    const pr = pts3.map(([x,y,z])=>proj(x,y,z,cx,cy));
-
-    // Segmentos ordenados por Z
-    const segs = pts3.slice(0,-1).map((_,i)=>[(pts3[i][2]+pts3[i+1][2])/2, i]);
-    segs.sort((a,b)=>a[0]-b[0]);
+    const pr = pts3.map(([x,y,z]) => proj(x,y,z,cx,cy));
+    const segs = pts3.slice(0,-1).map((_,i) => [(pts3[i][2]+pts3[i+1][2])/2, i]);
+    segs.sort((a,b) => a[0]-b[0]);
 
     const rv = 175 + 80*Math.sin(fn*0.038 + colorOffset*3);
     const bv = 35  + 70*Math.sin(fn*0.031 + colorOffset*2);
@@ -192,13 +217,12 @@ function makeHeart(canvasId, fpsId, frmId, rndId, speedMult, colorOffset, label)
       const b = Math.round(bv*(0.18+0.82*d));
       ctx.beginPath();
       ctx.strokeStyle = `rgb(${r},${g},${b})`;
-      ctx.lineWidth   = Math.max(1, 1+3.5*d);
+      ctx.lineWidth = Math.max(1, 1+3.5*d);
       ctx.moveTo(pr[i][0], pr[i][1]);
       ctx.lineTo(pr[i+1][0], pr[i+1][1]);
       ctx.stroke();
     }
 
-    // Highlight frente
     for (const [mz,i] of segs.slice(-45)) {
       ctx.beginPath();
       ctx.arc(pr[i][0], pr[i][1], 1.5, 0, Math.PI*2);
@@ -206,37 +230,34 @@ function makeHeart(canvasId, fpsId, frmId, rndId, speedMult, colorOffset, label)
       ctx.fill();
     }
 
-    // Partículas
-    for (let k=0; k<14; k++) {
-      const a2  = angle + k*Math.PI/7 + fn*0.045;
-      const r2  = 5.8 + 0.9*Math.sin(fn*0.07+k);
-      const oy  = 1.6*Math.sin(fn*0.055+k*0.8);
+    for (let k = 0; k < 14; k++) {
+      const a2 = angle + colorOffset + k*Math.PI/7 + fn*0.045;
+      const r2 = 5.8 + 0.9*Math.sin(fn*0.07+k);
+      const oy = 1.6*Math.sin(fn*0.055+k*0.8);
       const [ppx,ppy,psc] = proj(r2*Math.cos(a2), oy, r2*Math.sin(a2), cx, cy);
-      const sz  = Math.max(1, (2+3*psc)*(0.5+0.5*Math.sin(fn*0.12+k)));
-      const pr2 = Math.min(255, Math.round((55+k*14)*psc*1.5));
-      const pg2 = Math.min(255, Math.round((22+k*18)*psc*1.5));
-      const pb2 = Math.min(255, Math.round(Math.max(0,238-k*17)*psc*1.5));
+      const sz = Math.max(1, (2+3*psc)*(0.5+0.5*Math.sin(fn*0.12+k)));
       ctx.beginPath();
       ctx.arc(ppx, ppy, sz, 0, Math.PI*2);
+      const pr2 = Math.min(255,Math.round((55+k*14)*psc*1.5));
+      const pg2 = Math.min(255,Math.round((22+k*18)*psc*1.5));
+      const pb2 = Math.min(255,Math.round(Math.max(0,238-k*17)*psc*1.5));
       ctx.fillStyle = `rgb(${pr2},${pg2},${pb2})`;
       ctx.fill();
     }
 
-    // Barra progreso
-    const angDeg = (angle/(2*Math.PI)*360);
-    const bw = angDeg/360*(CW-32);
+    const angDeg = ((angle/(2*Math.PI))*360).toFixed(0);
+    const bw = (angle/(2*Math.PI)) * (CW-32);
     ctx.fillStyle = '#0a0a16';
     ctx.fillRect(16, CH-18, CW-32, 7);
     ctx.fillStyle = `rgb(${Math.round(rv*0.55)},12,${Math.round(bv*0.45)})`;
     ctx.fillRect(17, CH-17, Math.max(1,bw), 5);
 
-    // Label
     const rndMs = (performance.now()-t0).toFixed(1);
     ctx.font = 'bold 12px monospace';
     ctx.fillStyle = '#000';
-    ctx.fillText(`${label} | ${angDeg.toFixed(0)}° | ${fps}fps | ${rndMs}ms`, 13, 16);
-    ctx.fillStyle = colorOffset===0 ? '#ffd700' : '#4fc3f7';
-    ctx.fillText(`${label} | ${angDeg.toFixed(0)}° | ${fps}fps | ${rndMs}ms`, 12, 15);
+    ctx.fillText(`${label} | ${angDeg}° | ${fps}fps | ${rndMs}ms`, 13, 16);
+    ctx.fillStyle = colorOffset === 0 ? '#ffd700' : '#4fc3f7';
+    ctx.fillText(`${label} | ${angDeg}° | ${fps}fps | ${rndMs}ms`, 12, 15);
 
     if (frmId) document.getElementById(frmId).textContent = fn;
     if (rndId) document.getElementById(rndId).textContent = rndMs;
@@ -244,40 +265,40 @@ function makeHeart(canvasId, fpsId, frmId, rndId, speedMult, colorOffset, label)
     fn++;
     requestAnimationFrame(draw);
   }
-
   requestAnimationFrame(draw);
-  return { getFps: ()=>fps };
 }
 
-// Instanciar ambos corazones con parámetros distintos
-// P1: velocidad normal, color rojo/púrpura
-makeHeart('c1',    'fps1','frm1','rnd1', 1.0, 0,    'P1 · CANVAS A');
-makeHeart('c1solo','fps1','frm1','rnd1', 1.0, 0,    'P1 · CANVAS A');
-
-// P2: misma velocidad para comparar justo, color azul/cian
-makeHeart('c2',    'fps2','frm2','rnd2', 1.0, 1.047,'P2 · CANVAS B');
-makeHeart('c2solo','fps2','frm2','rnd2', 1.0, 1.047,'P2 · CANVAS B');
+// Instanciar los 4 canvas (VS + solos)
+makeHeart('c1',    'fps1', 'frm1', 'rnd1',  0,     'P1 · CANVAS A');
+makeHeart('c2',    'fps2', 'frm2', 'rnd2',  1.047, 'P2 · CANVAS B');
+makeHeart('c1solo','fps1s','frm1s','rnd1s', 0,     'P1 · CANVAS A');
+makeHeart('c2solo','fps2s','frm2s','rnd2s', 1.047, 'P2 · CANVAS B');
 
 // Status bar
-let statusTick = 0;
-setInterval(()=>{
+setInterval(() => {
   const f1 = document.getElementById('fps1').textContent;
   const f2 = document.getElementById('fps2').textContent;
-  document.getElementById('dot').style.background = '#2ecc71';
-  document.getElementById('status-text').textContent = `P1: ${f1}fps · P2: ${f2}fps · ambas en canvas`;
-  document.getElementById('latency-label').textContent = '';
+  document.getElementById('status-text').textContent = `P1: ${f1}fps · P2: ${f2}fps · Canvas 60fps nativo`;
 }, 600);
 
-// ── Selector ────────────────────────────────────────────────
+// ── Selector ─────────────────────────────────────────────────
 let currentPanel = 3;
 function switchPanel(n) {
   currentPanel = n;
   document.getElementById('panel1').classList.toggle('active', n===1);
   document.getElementById('panel2').classList.toggle('active', n===2);
   document.getElementById('panel-both').classList.toggle('active', n===3);
+  document.getElementById('panel3').classList.toggle('active', n===4);
   document.getElementById('btn1').classList.toggle('active', n===1);
   document.getElementById('btn2').classList.toggle('active', n===2);
   document.getElementById('btnB').classList.toggle('active', n===3);
+  document.getElementById('btn3').classList.toggle('active', n===4);
+
+  // Pausar/reanudar YouTube según panel
+  const iframe = document.getElementById('yt-player');
+  if (n === 4) {
+    iframe.src = `https://www.youtube.com/embed/${VIDEO_ID}?autoplay=1&vq=hd2160&rel=0&modestbranding=1&playsinline=1`;
+  }
 }
 </script>
 </body>
