@@ -25,6 +25,25 @@
     margin-bottom: 10px;
   }
   h1 { font-size: 14px; color: #666; letter-spacing: 1px; text-transform: uppercase; }
+  #selector { display: flex; gap: 6px; }
+  .tab-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid #333;
+    background: #111;
+    color: #555;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  .tab-btn.active { background: #e74c3c; border-color: #e74c3c; color: #fff; }
+  .tab-btn:hover:not(.active) { border-color: #555; color: #aaa; }
+  .badge {
+    font-size: 9px; background: #333; padding: 1px 5px;
+    border-radius: 8px; margin-left: 4px; color: #888;
+  }
+  .tab-btn.active .badge { background: rgba(255,255,255,0.2); color: #fff; }
   #status-bar {
     width: 100%; max-width: 960px;
     display: flex; gap: 10px;
@@ -38,12 +57,18 @@
   }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
   #dot.offline { background: #e74c3c; animation: none; }
+  .panel { width: 100%; max-width: 960px; display: none; }
+  .panel.active { display: block; }
   .frame-wrap {
-    width: 100%; max-width: 960px;
     background: #111; border: 1px solid #1a1a1a;
     border-radius: 8px; overflow: hidden;
   }
   .frame-wrap img { width: 100%; height: auto; display: block; }
+  #p2-info {
+    background: #0d0d0d; border: 1px solid #1a1a1a;
+    border-radius: 6px; padding: 10px 14px;
+    margin-top: 8px; font-size: 11px; color: #444; line-height: 1.9;
+  }
   #footer {
     font-size: 10px; color: #222;
     margin-top: 8px; text-align: center;
@@ -53,7 +78,15 @@
 <body>
 
 <div id="header">
-  <h1>⚡ Zapia Visor — En Vivo</h1>
+  <h1>⚡ Zapia Visor</h1>
+  <div id="selector">
+    <button class="tab-btn active" id="btn1" onclick="switchPanel(1)">
+      Pantalla 1 <span class="badge">OFICIAL</span>
+    </button>
+    <button class="tab-btn" id="btn2" onclick="switchPanel(2)">
+      Pantalla 2 <span class="badge">PRUEBAS</span>
+    </button>
+  </div>
 </div>
 
 <div id="status-bar">
@@ -62,46 +95,80 @@
   <span id="latency-label"></span>
 </div>
 
-<div class="frame-wrap">
-  <img id="frame" src="" alt="Cargando..." />
+<!-- PANTALLA 1 — OFICIAL (GitHub raw directo, sin proxy) -->
+<div id="panel1" class="panel active">
+  <div class="frame-wrap">
+    <img id="frame1" src="" alt="Cargando..." />
+  </div>
 </div>
 
-<div id="footer">rayzemartineztv.github.io/zapia-visor · actualización ~2s</div>
+<!-- PANTALLA 2 — PRUEBAS (en construcción) -->
+<div id="panel2" class="panel">
+  <div class="frame-wrap" style="min-height:200px; display:flex; align-items:center; justify-content:center;">
+    <img id="frame2" src="" alt="" style="display:none; width:100%; height:auto;" />
+    <span id="p2-placeholder" style="color:#333; font-size:13px;">🔧 Pantalla 2 — en configuración</span>
+  </div>
+  <div id="p2-info">
+    <b>🧪 Pantalla 2 — Push directo (sin GitHub)</b><br>
+    Aquí irá el canal de baja latencia vía Cloudflare Workers.<br>
+    Latencia estimada: <b style="color:#f39c12">&lt;100ms</b>
+  </div>
+</div>
+
+<div id="footer">rayzemartineztv.github.io/zapia-visor · P1: GitHub raw ~2s · P2: próximamente CF Workers</div>
 
 <script>
 const RAW = "https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/frame.png";
+
 const dot    = document.getElementById("dot");
 const status = document.getElementById("status-text");
 const latLbl = document.getElementById("latency-label");
-const img    = document.getElementById("frame");
+const img1   = document.getElementById("frame1");
 
+let currentPanel = 1;
 let lastSize = 0;
 let errors = 0;
 
-async function refresh() {
+function switchPanel(n) {
+  currentPanel = n;
+  document.getElementById("panel1").classList.toggle("active", n === 1);
+  document.getElementById("panel2").classList.toggle("active", n === 2);
+  document.getElementById("btn1").classList.toggle("active", n === 1);
+  document.getElementById("btn2").classList.toggle("active", n === 2);
+  // Actualizar status bar según panel
+  if (n === 2) {
+    dot.className = "offline";
+    status.textContent = "En configuración";
+    latLbl.textContent = "";
+  } else {
+    dot.className = "";
+    status.textContent = "En vivo";
+  }
+}
+
+// ── PANTALLA 1 — polling GitHub raw cada 2s ──────────────────
+async function refreshP1() {
   try {
     const t0 = Date.now();
-    // Bust cache con timestamp
-    const url = RAW + "?t=" + t0;
-    const resp = await fetch(url, { cache: "no-store" });
+    const resp = await fetch(RAW + "?t=" + t0, { cache: "no-store" });
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     const blob = await resp.blob();
     const ms = Date.now() - t0;
-    const objUrl = URL.createObjectURL(blob);
-    // Solo actualizar si hay cambio (tamaño diferente)
     if (blob.size !== lastSize) {
-      const old = img.src;
-      img.src = objUrl;
+      const old = img1.src;
+      img1.src = URL.createObjectURL(blob);
       if (old.startsWith("blob:")) URL.revokeObjectURL(old);
       lastSize = blob.size;
     }
     errors = 0;
-    dot.className = "";
-    status.textContent = "En vivo";
-    latLbl.textContent = `↻ ${ms}ms · ${(blob.size/1024).toFixed(0)}KB`;
+    if (currentPanel === 1) {
+      dot.className = "";
+      status.textContent = "En vivo";
+      latLbl.textContent = `↻ ${ms}ms · ${(blob.size/1024).toFixed(0)}KB`;
+    }
   } catch(e) {
     errors++;
-    if (errors >= 3) {
+    if (errors >= 3 && currentPanel === 1) {
       dot.className = "offline";
       status.textContent = "Sin señal";
       latLbl.textContent = "";
@@ -109,8 +176,8 @@ async function refresh() {
   }
 }
 
-refresh();
-setInterval(refresh, 2000);
+refreshP1();
+setInterval(refreshP1, 2000);
 </script>
 </body>
 </html>
