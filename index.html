@@ -1,305 +1,249 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Zapia Visor — Live</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: #0a0a0a; color: #e0e0e0;
-    font-family: 'Segoe UI', sans-serif;
-    min-height: 100vh; display: flex;
-    flex-direction: column; align-items: center; padding: 10px;
-  }
-  #header {
-    width: 100%; max-width: 960px;
-    display: flex; align-items: center;
-    justify-content: space-between; margin-bottom: 10px;
-  }
-  h1 { font-size: 14px; color: #666; letter-spacing: 1px; text-transform: uppercase; }
-  #selector { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
-  .tab-btn {
-    padding: 5px 12px; border-radius: 20px;
-    border: 1px solid #333; background: #111; color: #555;
-    font-size: 11px; cursor: pointer; transition: all 0.2s;
-    font-family: 'Segoe UI', sans-serif;
-  }
-  .tab-btn.active { background: #e74c3c; border-color: #e74c3c; color: #fff; }
-  .tab-btn:hover:not(.active) { border-color: #555; color: #aaa; }
-  .badge { font-size: 9px; background: #333; padding: 1px 5px; border-radius: 8px; margin-left: 3px; color: #888; }
-  .tab-btn.active .badge { background: rgba(255,255,255,0.2); color: #fff; }
-  #status-bar {
-    width: 100%; max-width: 960px;
-    display: flex; gap: 10px; font-size: 11px; color: #555;
-    margin-bottom: 8px; align-items: center;
-  }
-  #dot { width: 7px; height: 7px; border-radius: 50%; background: #2ecc71; flex-shrink: 0; animation: pulse 1.5s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#050510;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hidden;height:100vh}
+#tabs{display:flex;background:#0a0a1a;border-bottom:1px solid #1a1a3a;z-index:10;position:relative}
+.tab{flex:1;padding:10px 0;text-align:center;cursor:pointer;font-size:13px;font-weight:600;letter-spacing:.5px;color:#556;transition:all .2s;border-bottom:3px solid transparent}
+.tab.active{color:#fff;border-bottom-color:#f0a800}
+.tab:hover:not(.active){color:#aaa}
+#screens{width:100%;height:calc(100vh - 43px);position:relative}
+.screen{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#050510}
+.screen.active{display:flex}
 
-  .panel { width: 100%; max-width: 960px; display: none; }
-  .panel.active { display: block; }
+/* P1 / P2 canvas layout */
+.canvas-wrap{position:relative;width:100%;height:100%}
+canvas{display:block;width:100%;height:100%}
+.hud{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.55);padding:5px 14px;border-radius:20px;
+  font-size:11px;color:#aaa;letter-spacing:.3px;white-space:nowrap;pointer-events:none}
+.badge{position:absolute;top:10px;left:12px;font-size:10px;font-weight:700;
+  letter-spacing:1px;padding:3px 10px;border-radius:12px;pointer-events:none}
+.badge-p1{background:rgba(255,168,0,.18);color:#f0a800;border:1px solid #f0a80055}
+.badge-p2{background:rgba(0,220,255,.14);color:#00dcff;border:1px solid #00dcff55}
 
-  /* Vista lado a lado */
-  #panel-both { width: 100%; max-width: 960px; display: none; gap: 6px; }
-  #panel-both.active { display: flex; }
-  .side {
-    flex: 1; min-width: 0;
-    background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 8px;
-    overflow: hidden; display: flex; flex-direction: column;
-  }
-  .side-label {
-    font-size: 10px; text-align: center;
-    padding: 5px; border-bottom: 1px solid #1a1a1a;
-    text-transform: uppercase; letter-spacing: 1px;
-  }
-  .gold { color: #f39c12; }
-  .blue { color: #3498db; }
-  .green { color: #2ecc71; }
+/* VS screen */
+#screen-vs{flex-direction:row}
+#screen-vs .half{flex:1;height:100%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+#screen-vs .divider{width:2px;background:linear-gradient(to bottom,transparent,#333,transparent);flex-shrink:0}
 
-  canvas { width: 100%; height: auto; display: block; background: #080818; }
-  .metrics {
-    background: #0d0d0d; border-top: 1px solid #111;
-    padding: 5px 10px; font-size: 10px; color: #555;
-    font-family: monospace; line-height: 1.8;
-  }
-  .metrics b { color: #999; }
+/* P3 YouTube */
+#screen-p3{flex-direction:column}
+#yt-wrap{width:100%;flex:1;position:relative}
+#yt-wrap iframe{width:100%;height:100%;border:none}
 
-  /* YouTube embed */
-  .yt-wrap {
-    position: relative; width: 100%; padding-top: 56.25%;
-    background: #000; border-radius: 0;
-  }
-  .yt-wrap iframe {
-    position: absolute; top: 0; left: 0;
-    width: 100%; height: 100%; border: none;
-  }
-  .yt-label {
-    background: #0a0a0a; padding: 6px 12px;
-    font-size: 10px; color: #555; font-family: monospace;
-    border-top: 1px solid #111;
-  }
-
-  #footer { font-size: 10px; color: #222; margin-top: 8px; text-align: center; }
+/* Zapia Activity log (P2 overlay) */
+#activity-log{position:absolute;bottom:38px;left:10px;right:10px;max-height:38%;
+  overflow-y:auto;pointer-events:none;display:flex;flex-direction:column;gap:3px}
+.log-line{font-size:10.5px;padding:3px 8px;border-radius:6px;
+  background:rgba(0,0,0,.6);border-left:3px solid #00dcff;
+  color:#cceeff;line-height:1.4;animation:fadeIn .25s ease}
+.log-line.warn{border-left-color:#f0a800;color:#ffe5a0}
+.log-line.ok{border-left-color:#00ff88;color:#aaffcc}
+.log-line.error{border-left-color:#ff4455;color:#ffaaaa}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
 
-<div id="header">
-  <h1>⚡ Zapia Visor</h1>
-  <div id="selector">
-    <button class="tab-btn" id="btn1" onclick="switchPanel(1)">P1 <span class="badge">CANVAS</span></button>
-    <button class="tab-btn" id="btn2" onclick="switchPanel(2)">P2 <span class="badge">CANVAS</span></button>
-    <button class="tab-btn active" id="btnB" onclick="switchPanel(3)">Ambas <span class="badge">VS</span></button>
-    <button class="tab-btn" id="btn3" onclick="switchPanel(4)">P3 <span class="badge">YouTube 8K</span></button>
-  </div>
+<div id="tabs">
+  <div class="tab active" onclick="show('p1')">P1 — Canvas Dorado</div>
+  <div class="tab"        onclick="show('p2')">P2 — En Vivo 🟢</div>
+  <div class="tab"        onclick="show('vs')">Ambas VS</div>
+  <div class="tab"        onclick="show('p3')">P3 — YouTube</div>
 </div>
 
-<div id="status-bar">
-  <div id="dot"></div>
-  <span id="status-text">Cargando...</span>
-  <span id="latency-label"></span>
-</div>
+<div id="screens">
 
-<!-- P1 solo -->
-<div id="panel1" class="panel">
-  <div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;overflow:hidden;">
-    <canvas id="c1solo" width="900" height="520"></canvas>
-  </div>
-  <div class="metrics">P1 · Canvas A — FPS: <b id="fps1s">—</b> · Frame: <b id="frm1s">0</b> · Render: <b id="rnd1s">—</b>ms</div>
-</div>
-
-<!-- P2 solo -->
-<div id="panel2" class="panel">
-  <div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;overflow:hidden;">
-    <canvas id="c2solo" width="900" height="520"></canvas>
-  </div>
-  <div class="metrics">P2 · Canvas B — FPS: <b id="fps2s">—</b> · Frame: <b id="frm2s">0</b> · Render: <b id="rnd2s">—</b>ms</div>
-</div>
-
-<!-- AMBAS VS -->
-<div id="panel-both" class="active">
-  <div class="side">
-    <div class="side-label gold">▶ Pantalla 1 — Canvas A</div>
-    <canvas id="c1" width="440" height="460"></canvas>
-    <div class="metrics">FPS: <b id="fps1" class="gold">—</b> &nbsp;|&nbsp; Frame: <b id="frm1">0</b> &nbsp;|&nbsp; Render: <b id="rnd1">—</b>ms</div>
-  </div>
-  <div class="side">
-    <div class="side-label blue">▶ Pantalla 2 — Canvas B</div>
-    <canvas id="c2" width="440" height="460"></canvas>
-    <div class="metrics">FPS: <b id="fps2" class="blue">—</b> &nbsp;|&nbsp; Frame: <b id="frm2">0</b> &nbsp;|&nbsp; Render: <b id="rnd2">—</b>ms</div>
-  </div>
-</div>
-
-<!-- P3 — YouTube 8K -->
-<div id="panel3" class="panel">
-  <div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;overflow:hidden;">
-    <div class="yt-wrap">
-      <iframe
-        id="yt-player"
-        src="https://www.youtube.com/embed/epbtOnRgA4c?autoplay=1&vq=hd2160&rel=0&modestbranding=1&playsinline=1"
-        allow="autoplay; fullscreen; picture-in-picture"
-        allowfullscreen>
-      </iframe>
-    </div>
-    <div class="yt-label green">
-      🎬 P3 — YouTube 8K/4K · epbtOnRgA4c · Calidad máxima disponible según tu conexión · Cambia calidad manualmente en el player → ⚙️ → Calidad → 4K/8K
+  <!-- P1 -->
+  <div id="screen-p1" class="screen active">
+    <div class="canvas-wrap">
+      <canvas id="c1"></canvas>
+      <div class="badge badge-p1">P1 · CANVAS NATIVO · 60FPS</div>
+      <div class="hud" id="hud1">— fps · — ms</div>
     </div>
   </div>
-</div>
 
-<div id="footer">
-  P1 · P2: Canvas JS 60fps nativo · P3: YouTube embed máx calidad · rayzemartineztv.github.io/zapia-visor
+  <!-- P2 LIVE -->
+  <div id="screen-p2" class="screen">
+    <div class="canvas-wrap">
+      <canvas id="c2"></canvas>
+      <div class="badge badge-p2">P2 · EN VIVO · ZAPIA BUILDING 🔴</div>
+      <div id="activity-log"></div>
+      <div class="hud" id="hud2">— fps · — ms</div>
+    </div>
+  </div>
+
+  <!-- VS -->
+  <div id="screen-vs" class="screen">
+    <div class="half" id="vs-left">
+      <canvas id="c3"></canvas>
+      <div class="badge badge-p1" style="top:8px;left:8px;font-size:9px">P1 DORADO</div>
+    </div>
+    <div class="divider"></div>
+    <div class="half" id="vs-right">
+      <canvas id="c4"></canvas>
+      <div class="badge badge-p2" style="top:8px;left:8px;font-size:9px">P2 EN VIVO</div>
+    </div>
+  </div>
+
+  <!-- P3 YouTube -->
+  <div id="screen-p3" class="screen">
+    <div id="yt-wrap">
+      <iframe id="yt-frame"
+        src="https://www.youtube.com/embed/epbtOnRgA4c?autoplay=1&mute=1&controls=1&rel=0&vq=hd2160&loop=1&playlist=epbtOnRgA4c"
+        allow="autoplay;fullscreen;picture-in-picture" allowfullscreen></iframe>
+    </div>
+  </div>
 </div>
 
 <script>
-const VIDEO_ID = 'epbtOnRgA4c';
-
-// ── Motor corazón 3D ─────────────────────────────────────────
-function heartPoint(t) {
-  return [
-    16 * Math.pow(Math.sin(t), 3) * 0.3,
-    (13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t)) * 0.3,
-    8 * Math.sin(t) * Math.cos(t) * 0.3
-  ];
-}
-function rotateY(x, y, z, a) {
-  return [x*Math.cos(a)+z*Math.sin(a), y, -x*Math.sin(a)+z*Math.cos(a)];
-}
-function proj(x, y, z, cx, cy) {
-  const sc = 500/(500+z*28);
-  return [cx+x*sc*58, cy-y*sc*58, sc];
+// ─── Tab routing ───────────────────────────────────────────────
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  const idx = {p1:0,p2:1,vs:2,p3:3}[id];
+  document.querySelectorAll('.tab')[idx].classList.add('active');
 }
 
-function makeHeart(canvasId, fpsId, frmId, rndId, colorOffset, label) {
-  const cv = document.getElementById(canvasId);
-  if (!cv) return;
-  const ctx = cv.getContext('2d');
-  const CW = cv.width, CH = cv.height;
-  let fn = 0, fps = 0, fpsFrames = 0, fpsTimer = performance.now();
-  const STEPS = 340;
+// ─── Activity Log (P2) ────────────────────────────────────────
+const logEl = document.getElementById('activity-log');
+const LOG_MAX = 18;
+function addLog(msg, type=''){
+  const d = document.createElement('div');
+  d.className = 'log-line' + (type ? ' '+type : '');
+  const ts = new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  d.textContent = `${ts}  ${msg}`;
+  logEl.appendChild(d);
+  while(logEl.children.length > LOG_MAX) logEl.removeChild(logEl.firstChild);
+  logEl.scrollTop = logEl.scrollHeight;
+}
 
-  function draw() {
-    const now = performance.now();
-    fpsFrames++;
-    if (now - fpsTimer >= 500) {
-      fps = Math.round(fpsFrames * 1000 / (now - fpsTimer));
-      fpsFrames = 0; fpsTimer = now;
-      if (fpsId) document.getElementById(fpsId).textContent = fps;
-    }
-    const t0 = performance.now();
+// ─── Heart 3D renderer ────────────────────────────────────────
+function makeHeartRenderer(canvas, colorScheme, onFrame){
+  const ctx = canvas.getContext('2d');
+  let fn = 0, lastT = 0, fps = 0, frameCount = 0, fpsTimer = 0;
 
-    ctx.fillStyle = 'rgba(8,8,24,0.30)';
-    ctx.fillRect(0, 0, CW, CH);
+  function resize(){
+    canvas.width  = canvas.offsetWidth  * window.devicePixelRatio;
+    canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+  }
+  resize();
+  window.addEventListener('resize', resize);
 
+  function drawHeart(ts){
+    const dt = ts - lastT; lastT = ts;
+    frameCount++;
+    fpsTimer += dt;
+    if(fpsTimer >= 500){ fps = frameCount/(fpsTimer/1000)|0; frameCount=0; fpsTimer=0; }
+
+    const W = canvas.width, H = canvas.height;
+    // Fondo con fade suave
+    ctx.fillStyle = 'rgba(5,5,16,.38)';
+    ctx.fillRect(0,0,W,H);
+
+    const beat  = 1 + 0.08 * Math.sin(fn * 0.18);
     const angle = (fn * 0.018) % (2*Math.PI);
-    const beat  = 1.0 + 0.08 * Math.sin(fn * 0.18);
-    const cx = CW/2, cy = CH/2 + 15;
+    const cx = W/2, cy = H/2 + H*0.03;
+    const scale = Math.min(W,H) * 0.105;
 
-    const pts3 = [];
-    for (let i = 0; i <= STEPS; i++) {
-      const t = 2*Math.PI*i/STEPS;
-      let [x,y,z] = heartPoint(t);
-      [x,y,z] = rotateY(x*beat, y*beat, z*beat, angle + colorOffset);
-      pts3.push([x,y,z]);
+    // Generar puntos 3D del corazón
+    const pts3=[], N=300;
+    for(let i=0;i<=N;i++){
+      const t=2*Math.PI*i/N;
+      let x = 16*Math.pow(Math.sin(t),3)*0.3*beat;
+      let y = (13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))*0.3*beat;
+      let z = 8*Math.sin(t)*Math.cos(t)*0.3*beat;
+      const rx = x*Math.cos(angle)+z*Math.sin(angle);
+      const rz =-x*Math.sin(angle)+z*Math.cos(angle);
+      pts3.push([rx,y,rz]);
     }
-    const pr = pts3.map(([x,y,z]) => proj(x,y,z,cx,cy));
-    const segs = pts3.slice(0,-1).map((_,i) => [(pts3[i][2]+pts3[i+1][2])/2, i]);
-    segs.sort((a,b) => a[0]-b[0]);
+    // Proyección perspectiva
+    const proj = pts3.map(([x,y,z])=>{
+      const d=500/(500+z*28);
+      return [cx+x*d*scale, cy-y*d*scale, d];
+    });
+    // Ordenar por z (painter's algo)
+    const segs=[];
+    for(let i=0;i<N;i++) segs.push([(pts3[i][2]+pts3[i+1][2])/2, i]);
+    segs.sort((a,b)=>a[0]-b[0]);
 
-    const rv = 175 + 80*Math.sin(fn*0.038 + colorOffset*3);
-    const bv = 35  + 70*Math.sin(fn*0.031 + colorOffset*2);
-
-    for (const [mz, i] of segs) {
-      const d = Math.max(0, Math.min(1, (mz+3.5)/7));
-      const r = Math.round(rv*(0.22+0.78*d));
-      const g = Math.round(8*d);
-      const b = Math.round(bv*(0.18+0.82*d));
+    // Dibujar segmentos
+    ctx.lineCap='round';
+    for(const [mz,i] of segs){
+      const d=Math.max(0,Math.min(1,(mz+3.5)/7));
+      let r,g,b;
+      if(colorScheme==='gold'){
+        r=Math.round(colorScheme==='gold'?(175+80*Math.sin(fn*.038)):0);
+        g=Math.round(d*180);
+        b=Math.round((35+70*Math.sin(fn*.031))*(0.18+.82*d));
+        r=Math.round((175+80*Math.sin(fn*.038))*(0.22+.78*d));
+        g=Math.round(d*d*160);
+        b=Math.round((35+70*Math.sin(fn*.031))*(0.18+.82*d));
+      } else {
+        // Cian/azul
+        r=Math.round(d*30);
+        g=Math.round((140+80*Math.sin(fn*.038))*(0.22+.78*d));
+        b=Math.round((200+55*Math.sin(fn*.031))*(0.3+.7*d));
+      }
+      ctx.strokeStyle=`rgb(${r},${g},${b})`;
+      ctx.lineWidth=Math.max(1,(1+3.5*d)*Math.min(W,H)/700);
       ctx.beginPath();
-      ctx.strokeStyle = `rgb(${r},${g},${b})`;
-      ctx.lineWidth = Math.max(1, 1+3.5*d);
-      ctx.moveTo(pr[i][0], pr[i][1]);
-      ctx.lineTo(pr[i+1][0], pr[i+1][1]);
+      ctx.moveTo(proj[i][0],proj[i][1]);
+      ctx.lineTo(proj[i+1][0],proj[i+1][1]);
       ctx.stroke();
     }
 
-    for (const [mz,i] of segs.slice(-45)) {
-      ctx.beginPath();
-      ctx.arc(pr[i][0], pr[i][1], 1.5, 0, Math.PI*2);
-      ctx.fillStyle = 'rgba(255,190,210,0.65)';
-      ctx.fill();
-    }
-
-    for (let k = 0; k < 14; k++) {
-      const a2 = angle + colorOffset + k*Math.PI/7 + fn*0.045;
-      const r2 = 5.8 + 0.9*Math.sin(fn*0.07+k);
-      const oy = 1.6*Math.sin(fn*0.055+k*0.8);
-      const [ppx,ppy,psc] = proj(r2*Math.cos(a2), oy, r2*Math.sin(a2), cx, cy);
-      const sz = Math.max(1, (2+3*psc)*(0.5+0.5*Math.sin(fn*0.12+k)));
-      ctx.beginPath();
-      ctx.arc(ppx, ppy, sz, 0, Math.PI*2);
-      const pr2 = Math.min(255,Math.round((55+k*14)*psc*1.5));
-      const pg2 = Math.min(255,Math.round((22+k*18)*psc*1.5));
-      const pb2 = Math.min(255,Math.round(Math.max(0,238-k*17)*psc*1.5));
-      ctx.fillStyle = `rgb(${pr2},${pg2},${pb2})`;
-      ctx.fill();
-    }
-
-    const angDeg = ((angle/(2*Math.PI))*360).toFixed(0);
-    const bw = (angle/(2*Math.PI)) * (CW-32);
-    ctx.fillStyle = '#0a0a16';
-    ctx.fillRect(16, CH-18, CW-32, 7);
-    ctx.fillStyle = `rgb(${Math.round(rv*0.55)},12,${Math.round(bv*0.45)})`;
-    ctx.fillRect(17, CH-17, Math.max(1,bw), 5);
-
-    const rndMs = (performance.now()-t0).toFixed(1);
-    ctx.font = 'bold 12px monospace';
-    ctx.fillStyle = '#000';
-    ctx.fillText(`${label} | ${angDeg}° | ${fps}fps | ${rndMs}ms`, 13, 16);
-    ctx.fillStyle = colorOffset === 0 ? '#ffd700' : '#4fc3f7';
-    ctx.fillText(`${label} | ${angDeg}° | ${fps}fps | ${rndMs}ms`, 12, 15);
-
-    if (frmId) document.getElementById(frmId).textContent = fn;
-    if (rndId) document.getElementById(rndId).textContent = rndMs;
-
     fn++;
-    requestAnimationFrame(draw);
+    if(onFrame) onFrame(fps, dt);
+    requestAnimationFrame(drawHeart);
   }
-  requestAnimationFrame(draw);
+  requestAnimationFrame(drawHeart);
+  return ()=>fps;
 }
 
-// Instanciar los 4 canvas (VS + solos)
-makeHeart('c1',    'fps1', 'frm1', 'rnd1',  0,     'P1 · CANVAS A');
-makeHeart('c2',    'fps2', 'frm2', 'rnd2',  1.047, 'P2 · CANVAS B');
-makeHeart('c1solo','fps1s','frm1s','rnd1s', 0,     'P1 · CANVAS A');
-makeHeart('c2solo','fps2s','frm2s','rnd2s', 1.047, 'P2 · CANVAS B');
+// ─── P1 — Dorado ─────────────────────────────────────────────
+const c1 = document.getElementById('c1');
+makeHeartRenderer(c1,'gold',(fps,dt)=>{
+  document.getElementById('hud1').textContent=`${fps} fps · ${dt.toFixed(1)}ms · P1 canvas nativo`;
+});
 
-// Status bar
-setInterval(() => {
-  const f1 = document.getElementById('fps1').textContent;
-  const f2 = document.getElementById('fps2').textContent;
-  document.getElementById('status-text').textContent = `P1: ${f1}fps · P2: ${f2}fps · Canvas 60fps nativo`;
-}, 600);
+// ─── P2 — Cian con Activity Log ──────────────────────────────
+const c2 = document.getElementById('c2');
+let p2Frame = 0;
+makeHeartRenderer(c2,'cyan',(fps,dt)=>{
+  document.getElementById('hud2').textContent=`${fps} fps · ${dt.toFixed(1)}ms · P2 en vivo`;
+  // Log periódico de actividad simulando lo que Zapia hace
+  p2Frame++;
+  if(p2Frame % 180 === 1)  addLog('⚙️  Cloudflare Worker lab desplegado — zapia-visor-lab', 'ok');
+  if(p2Frame % 180 === 30) addLog('🔑  KV namespace creado: ca719bf4...', 'ok');
+  if(p2Frame % 180 === 60) addLog('📦  Benchmark iniciado — 3 configs × 15s', '');
+  if(p2Frame % 180 === 90) addLog('⚠️  KV write limit 429 — plan free agotado', 'warn');
+  if(p2Frame % 180 === 120) addLog('🔄  Worker prod re-deployado + KV limpiado', '');
+  if(p2Frame % 180 === 150) addLog('⏳  Reset KV writes: medianoche UTC — esperando...', 'warn');
+  if(p2Frame % 360 === 200) addLog('🎨  Renderizando corazón 3D — 60fps canvas nativo', 'ok');
+  if(p2Frame % 360 === 260) addLog('🧪  Lab worker listo en workers.dev ✅', 'ok');
+  if(p2Frame % 360 === 310) addLog('📊  Comparativa: 900p q88 vs 480p q35 vs 320p q25', '');
+});
 
-// ── Selector ─────────────────────────────────────────────────
-let currentPanel = 3;
-function switchPanel(n) {
-  currentPanel = n;
-  document.getElementById('panel1').classList.toggle('active', n===1);
-  document.getElementById('panel2').classList.toggle('active', n===2);
-  document.getElementById('panel-both').classList.toggle('active', n===3);
-  document.getElementById('panel3').classList.toggle('active', n===4);
-  document.getElementById('btn1').classList.toggle('active', n===1);
-  document.getElementById('btn2').classList.toggle('active', n===2);
-  document.getElementById('btnB').classList.toggle('active', n===3);
-  document.getElementById('btn3').classList.toggle('active', n===4);
+// ─── VS canvases ─────────────────────────────────────────────
+const c3 = document.getElementById('c3');
+const c4 = document.getElementById('c4');
+makeHeartRenderer(c3,'gold', null);
+makeHeartRenderer(c4,'cyan', null);
 
-  // Pausar/reanudar YouTube según panel
-  const iframe = document.getElementById('yt-player');
-  if (n === 4) {
-    iframe.src = `https://www.youtube.com/embed/${VIDEO_ID}?autoplay=1&vq=hd2160&rel=0&modestbranding=1&playsinline=1`;
-  }
+// Resize VS canvases al contenedor
+function resizeVS(){
+  const lw = document.getElementById('vs-left').offsetWidth;
+  const lh = document.getElementById('vs-left').offsetHeight;
+  [c3,c4].forEach(c=>{c.style.width=lw+'px';c.style.height=lh+'px';});
 }
+window.addEventListener('resize',resizeVS); resizeVS();
 </script>
 </body>
 </html>
