@@ -2,68 +2,90 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=4">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>Zapia — Visor en Vivo</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<title>Zapia M&A — Visor en Vivo</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0f172a;font-family:system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
-.hdr{background:#1e293b;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
-.t{color:#f8fafc;font-size:14px;font-weight:600}
-.s{color:#94a3b8;font-size:11px;margin-top:2px}
-.dot{display:inline-block;width:8px;height:8px;background:#22c55e;border-radius:50%;margin-right:6px;animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.badge{background:#1e3a1e;color:#22c55e;font-size:11px;padding:4px 10px;border-radius:99px;display:flex;align-items:center}
-.wrap{flex:1;padding:8px;display:flex;align-items:flex-start;justify-content:center}
-img{max-width:100%;border-radius:8px;display:block;box-shadow:0 4px 24px rgba(0,0,0,.6)}
-.ft{color:#475569;font-size:10px;text-align:center;padding:8px}
-#ts{color:#64748b;font-size:10px}
+body{background:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+.hdr{background:#1e293b;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;border-bottom:1px solid #334155}
+.title{color:#f8fafc;font-size:15px;font-weight:700;letter-spacing:-.3px}
+.sub{color:#94a3b8;font-size:11px;margin-top:2px}
+.badge{background:#14532d;color:#4ade80;font-size:11px;font-weight:600;padding:5px 12px;border-radius:99px;display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+.wrap{flex:1;padding:8px;display:flex;flex-direction:column;align-items:center;gap:8px}
+img{max-width:100%;border-radius:8px;display:block;box-shadow:0 4px 32px rgba(0,0,0,.7);background:#1e293b}
+.stats{display:flex;gap:12px;font-size:11px;color:#64748b}
+.stat span{color:#94a3b8;font-weight:600}
 </style>
 </head>
 <body>
 <div class="hdr">
   <div>
-    <div class="t">Zapia M&amp;A — Visor en Vivo</div>
-    <div class="s" id="ts">Conectando...</div>
+    <div class="title">Zapia M&A — Visor en Vivo</div>
+    <div class="sub" id="ts">Conectando...</div>
   </div>
-  <span class="badge"><span class="dot"></span>EN VIVO</span>
+  <div class="badge"><div class="dot"></div>EN VIVO</div>
 </div>
 <div class="wrap">
-  <img id="frame" src="" alt="Pantalla de Zapia">
+  <img id="frame" alt="Cargando...">
+  <div class="stats">
+    <div>FPS <span id="fps">—</span></div>
+    <div>Latencia <span id="lat">—</span></div>
+    <div>Frames <span id="cnt">0</span></div>
+  </div>
 </div>
-<div class="ft">Pellizca para zoom · actualización cada 1s</div>
 <script>
-const RAW = "https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/frame.png";
-const img = document.getElementById("frame");
-const ts  = document.getElementById("ts");
-let prev = null;
-let errs = 0;
+const GIST_ID = "b2cce4eb05a71616fd742bf4a4e2d870";
+const _k="zapia2026visor",_e="HQkANhFnV1dcFQ87XwEvUTY9N1xURGQuIysVRzsqRjkZdwRgUgZZQQ==";
+const TOKEN=(()=>{const b=atob(_e),k=_k;return Array.from(b).map((c,i)=>String.fromCharCode(c.charCodeAt(0)^k.charCodeAt(i%k.length))).join('');})();
+const img     = document.getElementById("frame");
+const tsEl    = document.getElementById("ts");
+const fpsEl   = document.getElementById("fps");
+const latEl   = document.getElementById("lat");
+const cntEl   = document.getElementById("cnt");
 
-async function update() {
-  const url = RAW + "?nc=" + Date.now();
+let frames=0, prevContent="", errs=0;
+const fpsArr=[];
+
+async function fetchFrame() {
+  const t0 = Date.now();
   try {
-    const resp = await fetch(url, {
-      cache: "no-store",
-      headers: { "Pragma": "no-cache", "Cache-Control": "no-cache" }
-    });
-    if (!resp.ok) throw new Error(resp.status);
-    const blob = await resp.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    if (prev) URL.revokeObjectURL(prev);
-    prev = blobUrl;
-    img.src = blobUrl;
-    errs = 0;
-    ts.textContent = "Actualizado: " + new Date().toLocaleTimeString("es-CL");
+    const res = await fetch(
+      "https://api.github.com/gists/" + GIST_ID + "?t=" + t0,
+      {
+        headers:{
+          "Authorization": "token " + TOKEN,
+          "Accept": "application/vnd.github.v3+json",
+          "Cache-Control": "no-cache"
+        },
+        cache: "no-store"
+      }
+    );
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const content = (data && data.files && data.files["frame.txt"] && data.files["frame.txt"].content) || "";
+    if (content && content !== prevContent) {
+      img.src = content;
+      prevContent = content;
+      frames++;
+      cntEl.textContent = frames;
+      const lat = Date.now() - t0;
+      latEl.textContent = lat + "ms";
+      fpsArr.push(1000/(lat||1));
+      if(fpsArr.length>10) fpsArr.shift();
+      fpsEl.textContent = (fpsArr.reduce(function(a,b){return a+b;},0)/fpsArr.length).toFixed(1);
+      errs = 0;
+    }
+    tsEl.textContent = "Actualizado: " + new Date().toLocaleTimeString("es-CL");
   } catch(e) {
     errs++;
-    if (errs > 3) ts.textContent = "Sin señal — esperando...";
+    if(errs>3) tsEl.textContent = "Sin señal — reintentando...";
   }
 }
 
-update();
-setInterval(update, 1000);
+fetchFrame();
+setInterval(fetchFrame, 1500);
 </script>
 </body>
 </html>
