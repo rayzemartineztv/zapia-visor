@@ -14,116 +14,240 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 12px;
+    padding: 10px;
   }
-  h1 {
-    font-size: 15px;
-    color: #aaa;
-    margin-bottom: 8px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-  #status-bar {
-    display: flex;
-    gap: 12px;
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 10px;
-    align-items: center;
-  }
-  #dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: #2ecc71;
-    animation: pulse 1.5s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-  #dot.offline { background: #e74c3c; animation: none; }
-  #frame-container {
+
+  /* ── HEADER ── */
+  #header {
     width: 100%;
     max-width: 960px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  h1 { font-size: 14px; color: #666; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* ── SELECTOR ── */
+  #selector {
+    display: flex;
+    gap: 6px;
+  }
+  .tab-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid #333;
     background: #111;
-    border: 1px solid #222;
+    color: #555;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  .tab-btn.active {
+    background: #e74c3c;
+    border-color: #e74c3c;
+    color: #fff;
+  }
+  .tab-btn:hover:not(.active) {
+    border-color: #555;
+    color: #aaa;
+  }
+  .tab-btn .badge {
+    font-size: 9px;
+    background: #333;
+    padding: 1px 5px;
+    border-radius: 8px;
+    margin-left: 4px;
+    color: #888;
+  }
+  .tab-btn.active .badge {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+  }
+
+  /* ── STATUS BAR ── */
+  #status-bar {
+    width: 100%;
+    max-width: 960px;
+    display: flex;
+    gap: 10px;
+    font-size: 11px;
+    color: #555;
+    margin-bottom: 8px;
+    align-items: center;
+    min-height: 18px;
+  }
+  #dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #2ecc71;
+    flex-shrink: 0;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+  #dot.offline { background: #e74c3c; animation: none; }
+  #dot.paused  { background: #f39c12; animation: none; }
+
+  /* ── PANTALLAS ── */
+  .panel { width: 100%; max-width: 960px; display: none; }
+  .panel.active { display: block; }
+
+  /* Panel 1 — visor oficial */
+  #frame-container {
+    background: #111;
+    border: 1px solid #1a1a1a;
     border-radius: 8px;
     overflow: hidden;
   }
-  #frame {
-    width: 100%;
-    height: auto;
-    display: block;
+  #frame { width: 100%; height: auto; display: block; }
+
+  /* Panel 2 — laboratorio */
+  #lab-frame-container {
+    background: #111;
+    border: 1px solid #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
   }
-  #info {
+  #lab-frame { width: 100%; height: auto; display: block; }
+  #lab-info {
+    background: #0d0d0d;
+    border: 1px solid #1a1a1a;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-top: 8px;
     font-size: 11px;
     color: #444;
-    margin-top: 6px;
+    line-height: 1.8;
+  }
+  #lab-info b { color: #666; }
+
+  /* Footer */
+  #footer {
+    font-size: 10px;
+    color: #2a2a2a;
+    margin-top: 8px;
     text-align: center;
   }
 </style>
 </head>
 <body>
-<h1>⚡ Zapia Visor — En vivo</h1>
+
+<div id="header">
+  <h1>⚡ Zapia Visor</h1>
+  <div id="selector">
+    <button class="tab-btn active" id="btn1" onclick="switchPanel(1)">
+      Pantalla 1 <span class="badge">OFICIAL</span>
+    </button>
+    <button class="tab-btn" id="btn2" onclick="switchPanel(2)">
+      Pantalla 2 <span class="badge">PRUEBAS</span>
+    </button>
+  </div>
+</div>
+
 <div id="status-bar">
   <div id="dot"></div>
   <span id="status-text">Conectando...</span>
   <span id="sha-label"></span>
   <span id="fps-label"></span>
 </div>
-<div id="frame-container">
-  <img id="frame" src="" alt="Cargando..." />
+
+<!-- PANEL 1 — OFICIAL -->
+<div id="panel1" class="panel active">
+  <div id="frame-container">
+    <img id="frame" src="" alt="Cargando..." />
+  </div>
 </div>
-<div id="info">zapia-visor-proxy.vercel.app — sin caché</div>
+
+<!-- PANEL 2 — LABORATORIO -->
+<div id="panel2" class="panel">
+  <div id="lab-frame-container">
+    <img id="lab-frame" src="" alt="Cargando..." />
+  </div>
+  <div id="lab-info">
+    <b>🧪 Pantalla 2 — Laboratorio de fluidez</b><br>
+    Este panel es para pruebas de mejora de latencia. La Pantalla 1 no se modifica.<br>
+    <span id="lab-stats">Esperando métricas...</span>
+  </div>
+</div>
+
+<div id="footer">zapia-visor-proxy.vercel.app · polling cada <span id="interval-label">2s</span></div>
 
 <script>
 const PROXY = "https://zapia-visor-proxy.vercel.app";
 let lastSha = null;
+let lastLabSha = null;
+let currentPanel = 1;
 let updateCount = 0;
 let lastUpdateTime = Date.now();
+let intervalMs = 2000;
 
-const frameEl  = document.getElementById("frame");
-const dotEl    = document.getElementById("dot");
-const statusEl = document.getElementById("status-text");
-const shaEl    = document.getElementById("sha-label");
-const fpsEl    = document.getElementById("fps-label");
+const frameEl   = document.getElementById("frame");
+const labFrameEl = document.getElementById("lab-frame");
+const dotEl     = document.getElementById("dot");
+const statusEl  = document.getElementById("status-text");
+const shaEl     = document.getElementById("sha-label");
+const fpsEl     = document.getElementById("fps-label");
+const labStats  = document.getElementById("lab-stats");
+
+function switchPanel(n) {
+  currentPanel = n;
+  document.getElementById("panel1").classList.toggle("active", n === 1);
+  document.getElementById("panel2").classList.toggle("active", n === 2);
+  document.getElementById("btn1").classList.toggle("active", n === 1);
+  document.getElementById("btn2").classList.toggle("active", n === 2);
+}
 
 async function checkUpdate() {
   try {
-    const r = await fetch(PROXY + "/api/sha?t=" + Date.now());
+    const t0 = Date.now();
+    const r = await fetch(PROXY + "/api/sha?t=" + t0);
     if (!r.ok) throw new Error("HTTP " + r.status);
     const sha = await r.text();
+    const latency = Date.now() - t0;
 
     if (sha !== lastSha) {
       lastSha = sha;
-      // Cargar la nueva imagen
+      const tLoad = Date.now();
       const newImg = new Image();
       newImg.onload = () => {
-        frameEl.src = newImg.src;
-        updateCount++;
+        const loadTime = Date.now() - tLoad;
         const now = Date.now();
-        const elapsed = (now - lastUpdateTime) / 1000;
+        const elapsed = ((now - lastUpdateTime) / 1000).toFixed(1);
         lastUpdateTime = now;
-        fpsEl.textContent = elapsed < 60 ? `↻ hace ${Math.round(elapsed)}s` : "";
-        dotEl.classList.remove("offline");
+        updateCount++;
+
+        // Actualizar ambas pantallas con la misma fuente por ahora
+        frameEl.src = newImg.src;
+        if (currentPanel === 2) labFrameEl.src = newImg.src;
+
+        dotEl.className = "";
         statusEl.textContent = "En vivo";
         shaEl.textContent = "SHA: " + sha;
+        fpsEl.textContent = "↻ " + elapsed + "s";
+
+        labStats.innerHTML =
+          "SHA: <b>" + sha + "</b> · " +
+          "Actualización cada: <b>" + elapsed + "s</b> · " +
+          "Latencia proxy: <b>" + latency + "ms</b> · " +
+          "Carga imagen: <b>" + loadTime + "ms</b> · " +
+          "Total updates: <b>" + updateCount + "</b>";
       };
       newImg.onerror = () => {
+        dotEl.className = "offline";
         statusEl.textContent = "Error cargando imagen";
-        dotEl.classList.add("offline");
       };
       newImg.src = PROXY + "/api/frame?sha=" + sha;
     }
-  } catch (e) {
-    dotEl.classList.add("offline");
-    statusEl.textContent = "Sin señal (" + e.message + ")";
+  } catch(e) {
+    dotEl.className = "offline";
+    statusEl.textContent = "Sin señal";
   }
 }
 
-// Polling cada 2 segundos
+// Arrancar
 checkUpdate();
-setInterval(checkUpdate, 2000);
+setInterval(checkUpdate, intervalMs);
 </script>
 </body>
 </html>
