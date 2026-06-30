@@ -3,80 +3,78 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Zapia Control — HQ</title>
+<title>Zapia Control — Pro</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#04040a;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hidden;height:100vh}
-#tabs{display:flex;background:#080816;border-bottom:1px solid #1a1a3a;z-index:10;position:relative}
-.tab{flex:1;padding:12px 0;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:#556;transition:all .2s;border-bottom:3px solid transparent}
+body{background:#020205;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hidden;height:100vh}
+#tabs{display:flex;background:#050510;border-bottom:1px solid #1a1a3a;z-index:10;position:relative}
+.tab{flex:1;padding:12px 0;text-align:center;cursor:pointer;font-size:12px;font-weight:600;color:#445;transition:all .2s;border-bottom:3px solid transparent}
 .tab.active{color:#fff;border-bottom-color:#f0a800}
 #screens{width:100%;height:calc(100vh - 43px);position:relative}
-.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:stretch;background:#04040a}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:stretch;background:#020205}
 .screen.active{display:flex}
 
-/* P1 - Panel de Órdenes */
-#screen-p1{background:#020208;padding:15px;overflow-y:auto;font-family:'Courier New',monospace}
-.order-card{background:rgba(20,20,35,0.6);border-left:4px solid #f0a800;padding:12px;margin-bottom:10px;border-radius:4px;animation:fadeIn 0.3s ease}
-.order-ts{color:#556;font-size:10px;margin-bottom:4px}
-.order-title{color:#f0a800;font-weight:bold;font-size:12px;margin-bottom:4px}
-.order-msg{color:#cceeff;font-size:11px;line-height:1.4}
+/* P1 - Panel de Órdenes Compacto */
+#screen-p1{background:#010105;padding:10px;overflow-y:auto;font-family:'Consolas','Monaco',monospace}
+.order-card{background:rgba(15,15,30,0.8);border-left:3px solid #f0a800;padding:8px 10px;margin-bottom:6px;border-radius:3px;animation:fadeIn 0.2s ease;box-shadow:0 2px 4px rgba(0,0,0,0.3)}
+.order-ts{color:#445;font-size:9px;margin-bottom:2px}
+.order-title{color:#f0a800;font-weight:bold;font-size:10.5px;margin-bottom:2px}
+.order-msg{color:#aaccff;font-size:10px;line-height:1.3}
 .order-ok{border-left-color:#00ff88}
 
 /* P2 - Zapia Screen */
-#p2-topbar{background:#0a0a1a;border-bottom:1px solid #1a1a3a;padding:8px 15px;display:flex;align-items:center;gap:12px}
-#p2-url{flex:1;background:#111;border:1px solid #222;border-radius:6px;padding:4px 10px;font-size:11px;color:#889;font-family:monospace;white-space:nowrap;overflow:hidden}
+#p2-topbar{background:#050510;border-bottom:1px solid #1a1a3a;padding:6px 12px;display:flex;align-items:center;gap:10px}
+#p2-url{flex:1;background:#08080f;border:1px solid #1a1a2a;border-radius:5px;padding:3px 10px;font-size:10.5px;color:#667;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #p2-img-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;position:relative}
-#p2-img{max-width:100%;max-height:100%;object-fit:contain;transition:opacity .3s}
+#p2-img{max-width:100%;max-height:100%;object-fit:contain;transition:opacity .2s}
 
 /* VS Split */
 #screen-vs{flex-direction:row!important}
 .half{flex:1;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden}
-.divider{width:2px;background:linear-gradient(to bottom,transparent,#334,transparent);flex-shrink:0}
+.divider{width:1px;background:#1a1a3a;flex-shrink:0}
 
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
-.dot{width:8px;height:8px;border-radius:50%;background:#00ff88;animation:pulse 1.2s ease infinite}
-@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.dot{width:7px;height:7px;border-radius:50%;background:#00ff88;animation:pulse 1.2s ease infinite}
+@keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
 
 <div id="tabs">
-  <div class="tab active" onclick="show('p1')">P1 — Gestión de Órdenes</div>
-  <div class="tab"        onclick="show('p2')">P2 — Zapia Screen (Vivo)</div>
-  <div class="tab"        onclick="show('vs')">AMBAS (VS)</div>
+  <div class="tab active" onclick="show('p1')">P1 — ÓRDENES</div>
+  <div class="tab"        onclick="show('p2')">P2 — SCREEN</div>
+  <div class="tab"        onclick="show('vs')">VS</div>
 </div>
 
 <div id="screens">
   <!-- P1 -->
   <div id="screen-p1" class="screen active">
-    <div style="font-size:10px;color:#445;margin-bottom:15px;letter-spacing:1px">SISTEMA DE ÓRDENES EN VIVO 🔴</div>
+    <div style="font-size:9px;color:#334;margin-bottom:10px;letter-spacing:1px;text-align:center">ZAPIA COMMAND LOG — REALTIME 🔴</div>
     <div id="orders-container"></div>
   </div>
 
   <!-- P2 -->
   <div id="screen-p2" class="screen">
     <div id="p2-topbar">
-      <div style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:#00ff88"><div class="dot"></div>LIVE</div>
-      <div id="p2-url">https://www.youtube.com/results?search_query=calle+latina</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px;font-weight:700;color:#00ff88"><div class="dot"></div>LIVE</div>
+      <div id="p2-url">conectando…</div>
     </div>
     <div id="p2-img-wrap">
-      <img id="p2-img" src="" style="opacity:0"/>
+      <img id="p2-img" src="" style="opacity:0" alt=""/>
     </div>
-    <div style="background:#0a0a1a;padding:5px 15px;font-size:10px;color:#445;display:flex;justify-content:space-between">
-      <span id="p2-status">🟢 Conectado</span>
+    <div style="background:#050510;padding:4px 12px;font-size:9px;color:#334;display:flex;justify-content:space-between;border-top:1px solid #1a1a3a">
+      <span id="p2-status">🟢 ONLINE</span>
       <span id="p2-time"></span>
     </div>
   </div>
 
   <!-- VS -->
   <div id="screen-vs" class="screen">
-    <div class="half" id="vs-orders" style="padding:10px;overflow-y:auto">
-      <div style="font-size:9px;color:#334;margin-bottom:10px">P1 · ÓRDENES</div>
-    </div>
+    <div class="half" id="vs-orders" style="padding:8px;overflow-y:auto;background:#010105"></div>
     <div class="divider"></div>
     <div class="half" style="background:#000">
-      <img id="p2-img-vs" src="" style="max-width:100%;max-height:100%;object-fit:contain"/>
-      <div style="position:absolute;top:8px;left:8px;font-size:9px;color:#00ff88;font-weight:bold;background:rgba(0,0,0,0.5);padding:2px 6px;border-radius:4px">P2 · SCREEN</div>
+      <img id="p2-img-vs" src="" style="max-width:100%;max-height:100%;object-fit:contain" alt=""/>
+      <div style="position:absolute;top:6px;left:6px;font-size:8px;color:#00ff88;font-weight:bold;background:rgba(0,0,0,0.6);padding:2px 5px;border-radius:3px">SCREEN</div>
     </div>
   </div>
 </div>
@@ -97,17 +95,25 @@ let lastLogCount = 0;
 function addOrder(entry){
   const card = document.createElement('div');
   card.className = 'order-card' + (entry.tipo==='ok' ? ' order-ok' : '');
+  const title = entry.msg.includes('→') ? entry.msg.split('→')[0] : 'COMANDO';
+  const detail = entry.msg.includes('→') ? entry.msg.split('→')[1] : entry.msg;
+  
   card.innerHTML = `
     <div class="order-ts">${entry.ts}</div>
-    <div class="order-title">${entry.msg.split('→')[0]}</div>
-    <div class="order-msg">${entry.msg.includes('→') ? entry.msg.split('→')[1] : entry.msg}</div>
+    <div class="order-title">${title.trim()}</div>
+    <div class="order-msg">${detail.trim()}</div>
   `;
+  
+  // P1: Las nuevas arriba (prepend)
   ordersCont.prepend(card);
   
-  // Clonar para la vista VS
+  // VS: Las nuevas arriba también para consistencia
   const vsCard = card.cloneNode(true);
-  vsOrdersCont.appendChild(vsCard);
-  vsOrdersCont.scrollTop = vsOrdersCont.scrollHeight;
+  vsOrdersCont.prepend(vsCard);
+  
+  // Limitar cantidad para no saturar memoria
+  if(ordersCont.children.length > 50) ordersCont.removeChild(ordersCont.lastChild);
+  if(vsOrdersCont.children.length > 50) vsOrdersCont.removeChild(vsOrdersCont.lastChild);
 }
 
 async function fetchLogs(){
@@ -145,7 +151,7 @@ async function poll(){
   }catch(e){}
 }
 
-setInterval(fetchLogs, 2000); fetchLogs();
+setInterval(fetchLogs, 1500); fetchLogs();
 setInterval(poll, 2500); poll();
 </script>
 </body>
