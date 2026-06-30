@@ -12,10 +12,26 @@ body{background:#000;color:#fff;font-family:'Segoe UI',sans-serif;display:flex;f
 /* HEADER FIJO SUPERIOR */
 #header{background:#050510;border-bottom:1px solid #1a1a3a;flex-shrink:0;z-index:1000;width:100%}
 #tabs{display:flex}
-.tab{flex:1;padding:14px 0;text-align:center;cursor:pointer;font-size:11px;font-weight:700;color:#445;border-bottom:2px solid transparent;text-transform:uppercase}
+.tab{flex:1;padding:14px 0;text-align:center;cursor:pointer;font-size:11px;font-weight:700;color:#445;border-bottom:2px solid transparent;text-transform:uppercase;position:relative;overflow:hidden}
 .tab.active{color:#fff;border-bottom-color:#f0a800;background:rgba(240,168,0,0.05)}
 #toolbar{background:#080816;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #151525}
-.btn{background:rgba(240,168,0,0.1);border:1px solid #f0a80044;color:#f0a800;padding:6px 12px;border-radius:4px;font-size:10px;font-weight:bold;cursor:pointer}
+.btn{background:rgba(240,168,0,0.1);border:1px solid #f0a80044;color:#f0a800;padding:6px 12px;border-radius:4px;font-size:10px;font-weight:bold;cursor:pointer;position:relative;overflow:hidden}
+
+/* EFECTO ONDAS (RIPPLE) */
+.ripple {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple-animation 0.6s linear;
+  pointer-events: none;
+}
+@keyframes ripple-animation {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
 
 /* CONTENEDOR PRINCIPAL - AJUSTE DINÁMICO */
 #screens{flex:1;position:relative;background:#000;width:100%;overflow:hidden}
@@ -54,15 +70,15 @@ body.theater-mode #screens{height:100vh}
 
 <div id="header">
   <div id="tabs">
-    <div class="tab" onclick="show('p1')">ÓRDENES</div>
-    <div class="tab" onclick="show('p2')">VISOR</div>
-    <div class="tab active" onclick="show('p3')">ZAPIA MASTER</div>
+    <div class="tab" onclick="show('p1', event)">ÓRDENES</div>
+    <div class="tab" onclick="show('p2', event)">VISOR</div>
+    <div class="tab active" onclick="show('p3', event)">ZAPIA MASTER</div>
   </div>
   <div id="toolbar">
     <div style="font-size:10px;color:#f0a800;font-weight:bold;letter-spacing:1px">M&A MASTER</div>
     <div style="display:flex;gap:6px">
-      <button class="btn" onclick="manualRefresh()">F5</button>
-      <button class="btn" onclick="toggleTheater()">MAX</button>
+      <button class="btn" onclick="manualRefresh(event)">F5</button>
+      <button class="btn" onclick="toggleTheater(event)">MAX</button>
     </div>
   </div>
 </div>
@@ -71,7 +87,7 @@ body.theater-mode #screens{height:100vh}
   <div id="screen-p1" class="screen"><div class="chat-container" id="orders-container"></div></div>
   <div id="screen-p2" class="screen">
     <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000">
-      <img id="p2-img" style="max-width:100%;max-height:100%;object-fit:contain" onclick="toggleTheater()"/>
+      <img id="p2-img" style="max-width:100%;max-height:100%;object-fit:contain" onclick="toggleTheater(event)"/>
     </div>
   </div>
   <div id="screen-p3" class="screen active">
@@ -81,9 +97,9 @@ body.theater-mode #screens{height:100vh}
       <div id="input-bar">
         <button class="circle-btn" onclick="document.getElementById('hidden-file').click()">+</button>
         <input type="file" id="hidden-file" multiple style="display:none" onchange="handleFiles(this.files)">
-        <input type="text" id="cmd-input" placeholder="Comando..." onkeypress="if(event.key==='Enter') sendCmd()">
-        <button id="mic-btn" class="circle-btn mic-btn" onclick="toggleMic()">🎤</button>
-        <button class="circle-btn" onclick="sendCmd()">➤</button>
+        <input type="text" id="cmd-input" placeholder="Comando..." onkeypress="if(event.key==='Enter') sendCmd(event)">
+        <button id="mic-btn" class="circle-btn mic-btn" onclick="toggleMic(event)">🎤</button>
+        <button class="circle-btn" onclick="sendCmd(event)">➤</button>
       </div>
     </div>
   </div>
@@ -93,17 +109,40 @@ body.theater-mode #screens{height:100vh}
 let currentTab = 'p3', filesInBatch = [], lastLogCount = 0, fullHistory = [], isTheater = false;
 let mediaRecorder, audioChunks = [], isRecording = false;
 
-function show(id){
+// Función para el efecto de ondas (Ripple)
+function createRipple(event) {
+  const button = event.currentTarget;
+  const circle = document.createElement("span");
+  const diameter = Math.max(button.clientWidth, button.clientHeight);
+  const radius = diameter / 2;
+
+  circle.style.width = circle.style.height = `${diameter}px`;
+  circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
+  circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
+  circle.classList.add("ripple");
+
+  const ripple = button.getElementsByClassName("ripple")[0];
+  if (ripple) { ripple.remove(); }
+  button.appendChild(circle);
+}
+
+function show(id, event){
+  if(event) createRipple(event);
   currentTab = id;
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('screen-'+id).classList.add('active');
-  document.querySelector(`[onclick="show('${id}')"]`).classList.add('active');
+  document.querySelector(`[onclick^="show('${id}'"]`).classList.add('active');
 }
 
-function toggleTheater(){ isTheater = !isTheater; document.getElementById('main-body').classList.toggle('theater-mode', isTheater); }
+function toggleTheater(event){ 
+  if(event) createRipple(event);
+  isTheater = !isTheater; 
+  document.getElementById('main-body').classList.toggle('theater-mode', isTheater); 
+}
 
-async function toggleMic(){
+async function toggleMic(event){
+  if(event) createRipple(event);
   const btn = document.getElementById('mic-btn');
   if(!isRecording){
     try {
@@ -133,7 +172,8 @@ function renderPills(){
 
 function removeFile(idx){ filesInBatch.splice(idx, 1); renderPills(); if(!filesInBatch.length) document.getElementById('upload-status-p3').style.display='none'; }
 
-function sendCmd(){
+function sendCmd(event){
+  if(event) createRipple(event);
   const val = document.getElementById('cmd-input').value;
   if(!val && filesInBatch.length === 0) return;
   processSend(val, filesInBatch.length > 0);
@@ -155,7 +195,10 @@ function renderChat(){
   hist.scrollTop = hist.scrollHeight;
 }
 
-function manualRefresh(){ fetchLogs(true); }
+function manualRefresh(event){ 
+  if(event) createRipple(event);
+  fetchLogs(true); 
+}
 async function fetchLogs(isManual){
   try{
     const r = await fetch('https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/logs.json?v='+Date.now());
