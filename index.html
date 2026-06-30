@@ -7,69 +7,42 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#000;color:#fff;font-family:'Segoe UI',sans-serif;height:100vh;display:flex;flex-direction:column}
-
-/* Header */
 #header{background:#050510;border-bottom:1px solid #1a1a3a;flex-shrink:0;z-index:100}
 #tabs{display:flex}
 .tab{flex:1;padding:12px 0;text-align:center;cursor:pointer;font-size:11px;font-weight:700;color:#445;border-bottom:2px solid transparent}
 .tab.active{color:#fff;border-bottom-color:#f0a800}
-
-/* Toolbar */
 #toolbar{background:#080816;padding:8px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #151525}
 .btn{background:rgba(240,168,0,0.1);border:1px solid #f0a80044;color:#f0a800;padding:5px 12px;border-radius:4px;font-size:10px;font-weight:bold;cursor:pointer}
-
-/* Content Area */
 #screens{flex:1;position:relative;background:#000;overflow:hidden}
 .screen{position:absolute;inset:0;display:none;flex-direction:column;background:#020205}
 .screen.active{display:flex}
-
-/* Chat e Historial (P1 y P3) */
 .chat-container{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:12px;background:#010105}
 .msg{max-width:85%;padding:10px;border-radius:10px;font-size:12px;line-height:1.4}
 .msg.user{align-self:flex-end;background:#1a1a3a;color:#fff;border-bottom-right-radius:0}
 .msg.zap{align-self:flex-start;background:#101025;color:#cceeff;border-bottom-left-radius:0;border-left:3px solid #f0a800}
-
-/* P2 - Visor de Pantalla */
-#p2-topbar{background:#0a0a1a;border-bottom:1px solid #1a1a3a;padding:8px 12px;display:flex;align-items:center;gap:10px;flex-shrink:0}
-#p2-url{flex:1;background:#08080f;border:1px solid #1a1a2a;border-radius:5px;padding:4px 10px;font-size:11px;color:#667;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#p2-img-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;position:relative}
-#p2-img{max-width:100%;max-height:100%;object-fit:contain}
-
-/* Barra de Comandos (FIJA ABAJO) */
 #p3-footer{background:#080816;border-top:1px solid #1a1a3a;flex-shrink:0}
 .upload-status{background:#05050f;padding:8px 12px;max-height:80px;overflow-y:auto;border-bottom:1px solid #111}
 #file-pills{display:flex;flex-wrap:wrap;gap:6px}
 .pill{background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);padding:4px 10px;border-radius:15px;font-size:10px;color:#00ff88;display:flex;align-items:center;gap:6px}
-
 #input-bar{padding:12px;display:flex;align-items:center;gap:10px}
 #cmd-input{flex:1;background:#101020;border:1px solid #223;border-radius:20px;padding:10px 15px;color:#fff;font-size:13px;outline:none}
 .circle-btn{width:40px;height:40px;border-radius:50%;background:#1a1a3a;border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .mic-btn{background:#f0a800;color:#000}
-
-/* Modal */
 #modal{position:absolute;inset:0;background:rgba(0,0,0,0.9);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}
 .modal-box{background:#0a0a1a;border:1px solid #f0a800;padding:25px;border-radius:15px;text-align:center;max-width:350px}
-
-/* Theater Mode */
-body.theater-mode #header, body.theater-mode #toolbar { display: none; }
-body.theater-mode #p2-topbar { display: none; }
-body.theater-mode #screens { height: 100vh; }
 </style>
 </head>
 <body id="main-body">
-
 <div id="modal">
   <div class="modal-box">
-    <div style="font-size:14px;font-weight:bold;margin-bottom:10px;color:#f0a800">ENVIAR LOTE COMPLETO</div>
+    <div style="font-size:14px;font-weight:bold;margin-bottom:10px;color:#f0a800">ENVIAR LOTE</div>
     <div id="modal-desc" style="font-size:12px;color:#fff;margin-bottom:15px"></div>
-    <div id="modal-file-list" style="font-size:10px;color:#889;margin-bottom:20px;max-height:100px;overflow-y:auto;text-align:left;background:rgba(0,0,0,0.4);padding:10px"></div>
     <div style="display:flex;gap:12px">
       <button onclick="confirmBatch(false)" style="flex:1;background:#1a1a3a;color:#fff;border:none;padding:12px;border-radius:8px;cursor:pointer">SOLO TEXTO</button>
       <button onclick="confirmBatch(true)" style="flex:1;background:#f0a800;color:#000;border:none;padding:12px;border-radius:8px;font-weight:bold;cursor:pointer">ENVIAR TODO</button>
     </div>
   </div>
 </div>
-
 <div id="header">
   <div id="tabs">
     <div class="tab" onclick="show('p1')">ÓRDENES</div>
@@ -77,46 +50,29 @@ body.theater-mode #screens { height: 100vh; }
     <div class="tab active" onclick="show('p3')">ZAPIA MASTER</div>
   </div>
   <div id="toolbar">
-    <button class="btn" onclick="location.reload()">F5 RECARGAR</button>
-    <button class="btn" onclick="toggleTheater()">MODO CINE</button>
+    <button class="btn" onclick="manualRefresh()">F5 ACTUALIZAR</button>
+    <button class="btn" onclick="toggleTheater()">CINE</button>
   </div>
 </div>
-
 <div id="screens">
-  <div id="screen-p1" class="screen">
-    <div class="chat-container" id="orders-container"></div>
-  </div>
-  
-  <div id="screen-p2" class="screen">
-    <div id="p2-topbar"><div style="font-size:10px;color:#00ff88;font-weight:700">VISOR VIVO</div><div id="p2-url">KiteProp...</div></div>
-    <div id="p2-img-wrap" onclick="toggleTheater()"><img id="p2-img" src=""/></div>
-  </div>
-
+  <div id="screen-p1" class="screen"><div class="chat-container" id="orders-container"></div></div>
+  <div id="screen-p2" class="screen"><div id="p2-topbar" style="padding:8px;background:#0a0a1a;border-bottom:1px solid #111;font-size:10px;color:#667">VISOR VIVO</div><div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden"><img id="p2-img" style="max-width:100%;max-height:100%;object-fit:contain"/></div></div>
   <div id="screen-p3" class="screen active">
-    <div class="chat-container" id="chat-hist">
-      <div class="msg zap">Consola Zapia Master conectada. Escribe o sube archivos sin límites.</div>
-    </div>
+    <div class="chat-container" id="chat-hist"></div>
     <div id="p3-footer">
-      <div class="upload-status">
-        <div id="file-pills"></div>
-      </div>
+      <div class="upload-status" id="upload-status-p3"><div id="file-pills"></div></div>
       <div id="input-bar">
         <button class="circle-btn" onclick="document.getElementById('hidden-file').click()">+</button>
         <input type="file" id="hidden-file" multiple style="display:none" onchange="handleFiles(this.files)">
-        <input type="text" id="cmd-input" placeholder="Escribe tu comando aquí..." onkeypress="if(event.key==='Enter') sendCmd()">
+        <input type="text" id="cmd-input" placeholder="Escribe tu comando..." onkeypress="if(event.key==='Enter') sendCmd()">
         <button class="circle-btn mic-btn">🎤</button>
         <button class="circle-btn" onclick="sendCmd()">➤</button>
       </div>
     </div>
   </div>
 </div>
-
 <script>
-let currentTab = 'p3';
-let isTheater = false;
-let filesInBatch = [];
-let lastLogCount = 0;
-
+let currentTab = 'p3', filesInBatch = [], lastLogCount = 0, fullHistory = [];
 function show(id){
   currentTab = id;
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -124,17 +80,7 @@ function show(id){
   document.getElementById('screen-'+id).classList.add('active');
   document.querySelector(`[onclick="show('${id}')"]`).classList.add('active');
 }
-
-function toggleTheater(){
-  isTheater = !isTheater;
-  document.getElementById('main-body').classList.toggle('theater-mode', isTheater);
-}
-
-function handleFiles(files){
-  Array.from(files).forEach(f => filesInBatch.push(f));
-  renderPills();
-}
-
+function handleFiles(files){ Array.from(files).forEach(f => filesInBatch.push(f)); renderPills(); }
 function renderPills(){
   const cont = document.getElementById('file-pills'); cont.innerHTML = '';
   filesInBatch.forEach((f, idx) => {
@@ -143,60 +89,60 @@ function renderPills(){
     cont.appendChild(p);
   });
 }
-
 function removeFile(idx){ filesInBatch.splice(idx, 1); renderPills(); }
-
 function sendCmd(){
   const val = document.getElementById('cmd-input').value;
   if(!val && filesInBatch.length === 0) return;
   if(filesInBatch.length > 0){
-    document.getElementById('modal-desc').textContent = 'Confirmación de envío por lotes.';
-    document.getElementById('modal-file-list').innerHTML = filesInBatch.map(f => `• ${f.name}`).join('<br>');
+    document.getElementById('modal-desc').textContent = 'Confirmar envío de lote.';
     document.getElementById('modal').style.display='flex';
   } else { processSend(val, false); }
 }
-
-function confirmBatch(withFiles){
-  document.getElementById('modal').style.display='none';
-  processSend(document.getElementById('cmd-input').value, withFiles);
+function confirmBatch(wf){ document.getElementById('modal').style.display='none'; processSend(document.getElementById('cmd-input').value, wf); }
+function processSend(txt, wf){
+  const h = {ts:new Date().toLocaleTimeString('es-CL'), msg:txt||'Envío de archivos', tipo:'user', files:wf?filesInBatch.length:0};
+  fullHistory.push(h); renderChat(); document.getElementById('cmd-input').value = '';
+  if(wf) { filesInBatch = []; renderPills(); }
+  // Aquí se enviaría al servidor de logs persistente...
 }
-
-function processSend(txt, withFiles){
-  const hist = document.getElementById('chat-hist');
-  const u = document.createElement('div'); u.className='msg user';
-  u.innerHTML = (txt || 'Comando de archivos') + (withFiles ? `<br><small style="color:#00ff88">📦 ${filesInBatch.length} archivos.</small>` : '');
-  hist.appendChild(u);
-  document.getElementById('cmd-input').value = '';
-  if(withFiles) { filesInBatch = []; renderPills(); }
+function renderChat(){
+  const hist = document.getElementById('chat-hist'); hist.innerHTML = '';
+  fullHistory.forEach(m => {
+    const d = document.createElement('div'); d.className = 'msg ' + (m.tipo==='user'?'user':'zap');
+    d.innerHTML = `<small style="opacity:0.5">${m.ts}</small><br>${m.msg}` + (m.files?`<br><small style="color:#00ff88">📦 ${m.files} archivos.</small>`:'');
+    hist.appendChild(d);
+  });
   hist.scrollTop = hist.scrollHeight;
 }
-
-const ordersCont = document.getElementById('orders-container');
-async function fetchLogs(){
+function manualRefresh(){ fetchLogs(true); }
+async function fetchLogs(isManual){
   try{
     const r = await fetch('https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/logs.json?v='+Date.now());
     const logs = await r.json();
-    if(logs.length > lastLogCount){
-      logs.slice(lastLogCount).forEach(entry => {
-        const card = document.createElement('div'); card.className = 'msg zap';
-        card.innerHTML = `<small style="color:#f0a800">${entry.ts}</small><br><b>${(entry.msg.split('→')[0]).trim()}</b><br>${(entry.msg.split('→')[1] || entry.msg).trim()}`;
-        ordersCont.prepend(card);
+    if(logs.length > lastLogCount || isManual){
+      logs.forEach(l => {
+        if(!fullHistory.find(h => h.ts===l.ts && h.msg===l.msg)){
+          fullHistory.push({ts:l.ts, msg:l.msg, tipo:l.tipo==='user'?'user':'zap'});
+        }
       });
       lastLogCount = logs.length;
+      renderChat();
+      // También actualizar P1
+      const ord = document.getElementById('orders-container'); ord.innerHTML = '';
+      logs.slice().reverse().forEach(entry => {
+        const c = document.createElement('div'); c.className = 'msg zap';
+        c.innerHTML = `<small style="color:#f0a800">${entry.ts}</small><br><b>${entry.msg}</b>`;
+        ord.appendChild(c);
+      });
     }
   }catch(e){}
 }
-
 const p2img=document.getElementById('p2-img');
-let lastPtr='';
 async function poll(){
   try{
     const r=await fetch('https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/pointer.txt?v='+Date.now());
     const ptr=(await r.text()).trim();
-    if(ptr && ptr!==lastPtr){
-      lastPtr=ptr;
-      p2img.src='https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/'+ptr+'?v='+Date.now();
-    }
+    p2img.src='https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/'+ptr+'?v='+Date.now();
   }catch(e){}
 }
 setInterval(fetchLogs, 3000); fetchLogs();
