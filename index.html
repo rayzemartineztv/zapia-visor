@@ -6,24 +6,29 @@
 <title>Zapia Control — Pro</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#020205;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hidden;height:100vh}
-#tabs{display:flex;background:#050510;border-bottom:1px solid #1a1a3a;z-index:10;position:relative}
+body{background:#020205;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+
+/* Barra de Navegación y Herramientas (FIJA ARRIBA) */
+#header{background:#050510;border-bottom:1px solid #1a1a3a;z-index:100;flex-shrink:0}
+#tabs{display:flex}
 .tab{flex:1;padding:12px 0;text-align:center;cursor:pointer;font-size:12px;font-weight:600;color:#445;transition:all .2s;border-bottom:3px solid transparent}
 .tab.active{color:#fff;border-bottom-color:#f0a800}
 
-/* Botón F5 Universal */
-.f5-btn{position:absolute;top:55px;right:15px;z-index:100;background:rgba(20,20,35,0.8);border:1px solid #334;
-  color:#f0a800;padding:6px 12px;border-radius:4px;font-size:10px;font-weight:bold;cursor:pointer;
-  display:flex;align-items:center;gap:6px;transition:all 0.2s;backdrop-filter:blur(4px)}
+/* Submenú de Herramientas (Debajo de pestañas, no tapa el contenido) */
+#toolbar{background:#080816;padding:8px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #151525}
+.f5-btn{background:rgba(240,168,0,0.1);border:1px solid #f0a80044;
+  color:#f0a800;padding:5px 12px;border-radius:4px;font-size:10px;font-weight:bold;cursor:pointer;
+  display:flex;align-items:center;gap:6px;transition:all 0.2s}
 .f5-btn:hover{background:#f0a800;color:#000;border-color:#f0a800}
 .f5-btn:active{transform:scale(0.95)}
 
-#screens{width:100%;height:calc(100vh - 43px);position:relative}
+/* Contenedor de Pantallas (Ajustado al alto restante) */
+#screens{flex:1;position:relative;overflow:hidden;background:#000}
 .screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:stretch;background:#020205}
 .screen.active{display:flex}
 
-/* P1 - Panel de Órdenes Compacto */
-#screen-p1{background:#010105;padding:50px 10px 10px 10px;overflow-y:auto;font-family:'Consolas','Monaco',monospace}
+/* P1 - Panel de Órdenes */
+#screen-p1{background:#010105;padding:10px;overflow-y:auto;font-family:'Consolas','Monaco',monospace}
 .order-card{background:rgba(15,15,30,0.8);border-left:3px solid #f0a800;padding:8px 10px;margin-bottom:6px;border-radius:3px;animation:fadeIn 0.2s ease}
 .order-ts{color:#445;font-size:9px;margin-bottom:2px}
 .order-title{color:#f0a800;font-weight:bold;font-size:10.5px;margin-bottom:2px}
@@ -31,7 +36,7 @@ body{background:#020205;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hi
 .order-ok{border-left-color:#00ff88}
 
 /* P2 - Zapia Screen */
-#p2-topbar{background:#050510;border-bottom:1px solid #1a1a3a;padding:6px 12px;display:flex;align-items:center;gap:10px}
+#p2-topbar{background:#0a0a1a;border-bottom:1px solid #1a1a3a;padding:6px 12px;display:flex;align-items:center;gap:10px}
 #p2-url{flex:1;background:#08080f;border:1px solid #1a1a2a;border-radius:5px;padding:3px 10px;font-size:10.5px;color:#667;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #p2-img-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;position:relative}
 #p2-img{max-width:100%;max-height:100%;object-fit:contain;transition:opacity .2s}
@@ -48,21 +53,23 @@ body{background:#020205;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hi
 </head>
 <body>
 
-<div id="tabs">
-  <div class="tab active" onclick="show('p1')">P1 — ÓRDENES</div>
-  <div class="tab"        onclick="show('p2')">P2 — SCREEN</div>
-  <div class="tab"        onclick="show('vs')">VS</div>
+<div id="header">
+  <div id="tabs">
+    <div class="tab active" onclick="show('p1')">P1 — ÓRDENES</div>
+    <div class="tab"        onclick="show('p2')">P2 — SCREEN</div>
+    <div class="tab"        onclick="show('vs')">VS</div>
+  </div>
+  <div id="toolbar">
+    <button class="f5-btn" onclick="manualRefresh()">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+      F5 ACTUALIZAR
+    </div>
+  </div>
 </div>
-
-<button class="f5-btn" onclick="manualRefresh()">
-  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-  F5 ACTUALIZAR
-</button>
 
 <div id="screens">
   <!-- P1 -->
   <div id="screen-p1" class="screen active">
-    <div style="font-size:9px;color:#334;margin-bottom:10px;letter-spacing:1px;text-align:center">ZAPIA COMMAND LOG — REALTIME 🔴</div>
     <div id="orders-container"></div>
   </div>
 
@@ -83,7 +90,7 @@ body{background:#020205;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hi
 
   <!-- VS -->
   <div id="screen-vs" class="screen">
-    <div class="half" id="vs-orders" style="padding:50px 8px 8px 8px;overflow-y:auto;background:#010105"></div>
+    <div class="half" id="vs-orders" style="padding:8px;overflow-y:auto;background:#010105"></div>
     <div class="divider"></div>
     <div class="half" style="background:#000">
       <img id="p2-img-vs" src="" style="max-width:100%;max-height:100%;object-fit:contain" alt=""/>
@@ -117,17 +124,10 @@ function addOrder(entry, isManual){
   card.className = 'order-card' + (entry.tipo==='ok' ? ' order-ok' : '');
   const title = entry.msg.includes('→') ? entry.msg.split('→')[0] : 'COMANDO';
   const detail = entry.msg.includes('→') ? entry.msg.split('→')[1] : entry.msg;
-  
-  card.innerHTML = `
-    <div class="order-ts">${entry.ts}</div>
-    <div class="order-title">${title.trim()}</div>
-    <div class="order-msg">${detail.trim()}</div>
-  `;
-  
+  card.innerHTML = `<div class="order-ts">${entry.ts}</div><div class="order-title">${title.trim()}</div><div class="order-msg">${detail.trim()}</div>`;
   ordersCont.prepend(card);
   const vsCard = card.cloneNode(true);
   vsOrdersCont.prepend(vsCard);
-  
   if(ordersCont.children.length > 50) ordersCont.removeChild(ordersCont.lastChild);
   if(vsOrdersCont.children.length > 50) vsOrdersCont.removeChild(vsOrdersCont.lastChild);
 }
@@ -135,7 +135,6 @@ function addOrder(entry, isManual){
 async function fetchLogs(isManual){
   try{
     const r = await fetch('https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/logs.json?v='+Date.now());
-    if(!r.ok) return;
     const logs = await r.json();
     if(isManual){
       ordersCont.innerHTML = ''; vsOrdersCont.innerHTML = '';
@@ -154,7 +153,6 @@ let lastPtr='';
 async function poll(isManual){
   try{
     const r=await fetch('https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/pointer.txt?v='+Date.now());
-    if(!r.ok) return;
     const ptr=(await r.text()).trim();
     if(isManual || (ptr && ptr!==lastPtr)){
       lastPtr=ptr;
