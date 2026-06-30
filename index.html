@@ -3,90 +3,69 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Zapia Control Master — Pro</title>
+<title>Zapia Master Control</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#020205;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+body{background:#000;color:#fff;font-family:'Segoe UI',sans-serif;height:100vh;display:flex;flex-direction:column}
 
-/* Header & Tabs */
+/* Header */
 #header{background:#050510;border-bottom:1px solid #1a1a3a;flex-shrink:0;z-index:100}
 #tabs{display:flex}
-.tab{flex:1;padding:12px 0;text-align:center;cursor:pointer;font-size:11px;font-weight:600;color:#445;border-bottom:2px solid transparent}
+.tab{flex:1;padding:12px 0;text-align:center;cursor:pointer;font-size:11px;font-weight:700;color:#445;border-bottom:2px solid transparent}
 .tab.active{color:#fff;border-bottom-color:#f0a800}
 
-/* Toolbar Superior (F5 y Theater) */
+/* Toolbar */
 #toolbar{background:#080816;padding:8px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #151525}
 .btn{background:rgba(240,168,0,0.1);border:1px solid #f0a80044;color:#f0a800;padding:5px 12px;border-radius:4px;font-size:10px;font-weight:bold;cursor:pointer}
 
-/* Botón X Flotante (Modo Cine) */
-#minimize-btn{position:absolute;top:20px;right:20px;z-index:2000;background:rgba(255,50,50,0.4);border:1px solid #ff4444;color:#fff;width:35px;height:35px;border-radius:50%;display:none;align-items:center;justify-content:center;cursor:pointer}
-body.theater-mode #minimize-btn{display:flex}
-
-#screens{flex:1;position:relative;overflow:hidden;background:#000}
+/* Content Area */
+#screens{flex:1;position:relative;background:#000;overflow:hidden}
 .screen{position:absolute;inset:0;display:none;flex-direction:column;background:#020205}
 .screen.active{display:flex}
 
-/* Estilo Chat e Historial (P1 y P3) */
-.chat-container{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:10px;background:#010105}
-.msg{max-width:85%;padding:10px;border-radius:8px;font-size:11px;line-height:1.4;animation:fadeIn 0.2s ease}
+/* Chat e Historial (P1 y P3) */
+.chat-container{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:12px;background:#010105}
+.msg{max-width:85%;padding:10px;border-radius:10px;font-size:12px;line-height:1.4}
 .msg.user{align-self:flex-end;background:#1a1a3a;color:#fff;border-bottom-right-radius:0}
-.msg.zap{align-self:flex-start;background:#101025;color:#cceeff;border-bottom-left-radius:0;border-left:2px solid #f0a800}
-
-/* P1 - Bitácora de Órdenes */
-.order-card{background:rgba(15,15,30,0.8);border-left:3px solid #f0a800;padding:8px 10px;margin-bottom:6px;border-radius:3px}
-.order-ts{color:#445;font-size:9px}
-.order-title{color:#f0a800;font-weight:bold;font-size:10.5px}
-.order-msg{color:#aaccff;font-size:10px}
+.msg.zap{align-self:flex-start;background:#101025;color:#cceeff;border-bottom-left-radius:0;border-left:3px solid #f0a800}
 
 /* P2 - Visor de Pantalla */
-#p2-topbar{background:#0a0a1a;border-bottom:1px solid #1a1a3a;padding:6px 12px;display:flex;align-items:center;gap:10px;flex-shrink:0}
-#p2-url{flex:1;background:#08080f;border:1px solid #1a1a2a;border-radius:5px;padding:3px 10px;font-size:10.5px;color:#667;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#p2-img-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;position:relative;cursor:zoom-in}
+#p2-topbar{background:#0a0a1a;border-bottom:1px solid #1a1a3a;padding:8px 12px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+#p2-url{flex:1;background:#08080f;border:1px solid #1a1a2a;border-radius:5px;padding:4px 10px;font-size:11px;color:#667;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#p2-img-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;position:relative}
 #p2-img{max-width:100%;max-height:100%;object-fit:contain}
 
-/* P3 - Panel Zapia Web (Con Carga e Historial) */
-#p3-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.upload-status{background:#080816;padding:10px;border-top:1px solid #1a1a3a;max-height:100px;overflow-y:auto}
+/* Barra de Comandos (FIJA ABAJO) */
+#p3-footer{background:#080816;border-top:1px solid #1a1a3a;flex-shrink:0}
+.upload-status{background:#05050f;padding:8px 12px;max-height:80px;overflow-y:auto;border-bottom:1px solid #111}
 #file-pills{display:flex;flex-wrap:wrap;gap:6px}
 .pill{background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);padding:4px 10px;border-radius:15px;font-size:10px;color:#00ff88;display:flex;align-items:center;gap:6px}
-.pill .remove{cursor:pointer;color:#ff4444;font-weight:bold}
 
-/* Barra de Comandos (App Style) */
-#input-bar{background:#080816;padding:12px;border-top:1px solid #1a1a3a;display:flex;align-items:center;gap:10px;flex-shrink:0}
-#cmd-input{flex:1;background:#101020;border:1px solid #223;border-radius:20px;padding:8px 15px;color:#fff;font-size:12px;outline:none}
-.circle-btn{width:38px;height:38px;border-radius:50%;background:#1a1a3a;border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#input-bar{padding:12px;display:flex;align-items:center;gap:10px}
+#cmd-input{flex:1;background:#101020;border:1px solid #223;border-radius:20px;padding:10px 15px;color:#fff;font-size:13px;outline:none}
+.circle-btn{width:40px;height:40px;border-radius:50%;background:#1a1a3a;border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .mic-btn{background:#f0a800;color:#000}
 
-/* VS Split */
-#screen-vs{flex-direction:row!important}
-.half{flex:1;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden;cursor:zoom-in}
-.divider{width:1px;background:#1a1a3a;flex-shrink:0}
+/* Modal */
+#modal{position:absolute;inset:0;background:rgba(0,0,0,0.9);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:#0a0a1a;border:1px solid #f0a800;padding:25px;border-radius:15px;text-align:center;max-width:350px}
 
-/* Modal Confirmación */
-#modal{position:absolute;inset:0;background:rgba(0,0,0,0.85);z-index:3000;display:none;align-items:center;justify-content:center;padding:20px}
-.modal-box{background:#0a0a1a;border:1px solid #f0a800;padding:25px;border-radius:12px;text-align:center;max-width:320px}
-
-/* Theater Mode adjustments */
+/* Theater Mode */
 body.theater-mode #header, body.theater-mode #toolbar { display: none; }
 body.theater-mode #p2-topbar { display: none; }
 body.theater-mode #screens { height: 100vh; }
-body.theater-mode #p2-img { max-width: 100vw; max-height: 100vh; width: 100vw; height: 100vh; object-fit: contain; }
-
-@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body id="main-body">
 
-<div id="minimize-btn" onclick="toggleTheater()">✕</div>
-
 <div id="modal">
   <div class="modal-box">
-    <div style="font-size:13px;font-weight:bold;margin-bottom:8px;color:#f0a800">ENVIAR LOTE</div>
-    <div id="modal-desc" style="font-size:11px;color:#fff;margin-bottom:15px"></div>
-    <div id="modal-file-list" style="font-size:9px;color:#889;margin-bottom:20px;max-height:80px;overflow-y:auto;text-align:left;background:rgba(0,0,0,0.3);padding:8px"></div>
-    <div style="display:flex;gap:10px">
-      <button onclick="confirmBatch(false)" style="flex:1;background:#1a1a3a;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer">SOLO TEXTO</button>
-      <button onclick="confirmBatch(true)" style="flex:1;background:#f0a800;color:#000;border:none;padding:10px;border-radius:6px;font-weight:bold;cursor:pointer">ENVIAR TODO</button>
+    <div style="font-size:14px;font-weight:bold;margin-bottom:10px;color:#f0a800">ENVIAR LOTE COMPLETO</div>
+    <div id="modal-desc" style="font-size:12px;color:#fff;margin-bottom:15px"></div>
+    <div id="modal-file-list" style="font-size:10px;color:#889;margin-bottom:20px;max-height:100px;overflow-y:auto;text-align:left;background:rgba(0,0,0,0.4);padding:10px"></div>
+    <div style="display:flex;gap:12px">
+      <button onclick="confirmBatch(false)" style="flex:1;background:#1a1a3a;color:#fff;border:none;padding:12px;border-radius:8px;cursor:pointer">SOLO TEXTO</button>
+      <button onclick="confirmBatch(true)" style="flex:1;background:#f0a800;color:#000;border:none;padding:12px;border-radius:8px;font-weight:bold;cursor:pointer">ENVIAR TODO</button>
     </div>
   </div>
 </div>
@@ -95,44 +74,36 @@ body.theater-mode #p2-img { max-width: 100vw; max-height: 100vh; width: 100vw; h
   <div id="tabs">
     <div class="tab" onclick="show('p1')">ÓRDENES</div>
     <div class="tab" onclick="show('p2')">VISOR</div>
-    <div class="tab" onclick="show('vs')">VS</div>
-    <div class="tab active" onclick="show('p3')">ZAPIA WEB</div>
+    <div class="tab active" onclick="show('p3')">ZAPIA MASTER</div>
   </div>
   <div id="toolbar">
-    <button class="btn" onclick="location.reload()">F5 APP</button>
-    <button class="btn" onclick="toggleTheater()">EXPANDIR</button>
-    <div style="font-size:9px;color:#445;margin-left:auto">ZAPIA MASTER CONSOLE</div>
+    <button class="btn" onclick="location.reload()">F5 RECARGAR</button>
+    <button class="btn" onclick="toggleTheater()">MODO CINE</button>
   </div>
 </div>
 
 <div id="screens">
-  <div id="screen-p1" class="screen" onclick="handleContainerClick(event)">
+  <div id="screen-p1" class="screen">
     <div class="chat-container" id="orders-container"></div>
   </div>
   
   <div id="screen-p2" class="screen">
-    <div id="p2-topbar"><div style="font-size:9px;color:#00ff88">LIVE</div><div id="p2-url">conectando...</div></div>
-    <div id="p2-img-wrap" onclick="handleContainerClick(event)"><img id="p2-img" src=""/></div>
-  </div>
-
-  <div id="screen-vs" class="screen">
-    <div class="half" id="vs-orders" style="background:#010105;padding:8px;overflow-y:auto" onclick="handleContainerClick(event)"></div>
-    <div class="divider"></div>
-    <div class="half" style="background:#000" onclick="handleContainerClick(event)"><img id="p2-img-vs" src="" style="max-width:100%;max-height:100%;object-fit:contain"/></div>
+    <div id="p2-topbar"><div style="font-size:10px;color:#00ff88;font-weight:700">VISOR VIVO</div><div id="p2-url">KiteProp...</div></div>
+    <div id="p2-img-wrap" onclick="toggleTheater()"><img id="p2-img" src=""/></div>
   </div>
 
   <div id="screen-p3" class="screen active">
-    <div id="p3-wrap">
-      <div class="chat-container" id="chat-hist">
-        <div class="msg zap">Panel Zapia Web sincronizado. Listo para recibir comandos y lotes de archivos.</div>
-      </div>
+    <div class="chat-container" id="chat-hist">
+      <div class="msg zap">Consola Zapia Master conectada. Escribe o sube archivos sin límites.</div>
+    </div>
+    <div id="p3-footer">
       <div class="upload-status">
         <div id="file-pills"></div>
       </div>
       <div id="input-bar">
         <button class="circle-btn" onclick="document.getElementById('hidden-file').click()">+</button>
         <input type="file" id="hidden-file" multiple style="display:none" onchange="handleFiles(this.files)">
-        <input type="text" id="cmd-input" placeholder="Escribe tu comando..." onkeypress="if(event.key==='Enter') sendCmd()">
+        <input type="text" id="cmd-input" placeholder="Escribe tu comando aquí..." onkeypress="if(event.key==='Enter') sendCmd()">
         <button class="circle-btn mic-btn">🎤</button>
         <button class="circle-btn" onclick="sendCmd()">➤</button>
       </div>
@@ -159,12 +130,8 @@ function toggleTheater(){
   document.getElementById('main-body').classList.toggle('theater-mode', isTheater);
 }
 
-function handleContainerClick(e){
-  if(!isTheater && currentTab!=='p3') toggleTheater();
-}
-
 function handleFiles(files){
-  Array.from(files).forEach(f => { filesInBatch.push(f); });
+  Array.from(files).forEach(f => filesInBatch.push(f));
   renderPills();
 }
 
@@ -172,7 +139,7 @@ function renderPills(){
   const cont = document.getElementById('file-pills'); cont.innerHTML = '';
   filesInBatch.forEach((f, idx) => {
     const p = document.createElement('div'); p.className='pill';
-    p.innerHTML = `<span>${f.name}</span><span class="remove" onclick="removeFile(${idx})">×</span>`;
+    p.innerHTML = `<span>${f.name}</span><span style="cursor:pointer" onclick="removeFile(${idx})">×</span>`;
     cont.appendChild(p);
   });
 }
@@ -183,8 +150,8 @@ function sendCmd(){
   const val = document.getElementById('cmd-input').value;
   if(!val && filesInBatch.length === 0) return;
   if(filesInBatch.length > 0){
-    document.getElementById('modal-desc').textContent = `¿Confirmas el envío de este lote?`;
-    document.getElementById('modal-file-list').innerHTML = filesInBatch.map(f => `• ${f.name} (${(f.size/1024/1024).toFixed(2)} MB)`).join('<br>');
+    document.getElementById('modal-desc').textContent = 'Confirmación de envío por lotes.';
+    document.getElementById('modal-file-list').innerHTML = filesInBatch.map(f => `• ${f.name}`).join('<br>');
     document.getElementById('modal').style.display='flex';
   } else { processSend(val, false); }
 }
@@ -196,39 +163,31 @@ function confirmBatch(withFiles){
 
 function processSend(txt, withFiles){
   const hist = document.getElementById('chat-hist');
-  if(txt || withFiles){
-    const u = document.createElement('div'); u.className='msg user';
-    let c = txt || '[Comando de archivos]';
-    if(withFiles) c += '<br><small style="color:#00ff88">📦 Lote: ' + filesInBatch.length + ' arch.</small>';
-    u.innerHTML = c; hist.appendChild(u);
-  }
+  const u = document.createElement('div'); u.className='msg user';
+  u.innerHTML = (txt || 'Comando de archivos') + (withFiles ? `<br><small style="color:#00ff88">📦 ${filesInBatch.length} archivos.</small>` : '');
+  hist.appendChild(u);
   document.getElementById('cmd-input').value = '';
   if(withFiles) { filesInBatch = []; renderPills(); }
   hist.scrollTop = hist.scrollHeight;
 }
 
 const ordersCont = document.getElementById('orders-container');
-const vsOrdersCont = document.getElementById('vs-orders');
-
-function addOrder(entry){
-  const card = document.createElement('div'); card.className = 'order-card';
-  card.innerHTML = `<div class="order-ts">${entry.ts}</div><div class="order-title">${(entry.msg.split('→')[0]).trim()}</div><div class="order-msg">${(entry.msg.split('→')[1] || entry.msg).trim()}</div>`;
-  ordersCont.prepend(card);
-  const vsCard = card.cloneNode(true); vsOrdersCont.prepend(vsCard);
-}
-
 async function fetchLogs(){
   try{
     const r = await fetch('https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/logs.json?v='+Date.now());
     const logs = await r.json();
     if(logs.length > lastLogCount){
-      logs.slice(lastLogCount).forEach(addOrder);
+      logs.slice(lastLogCount).forEach(entry => {
+        const card = document.createElement('div'); card.className = 'msg zap';
+        card.innerHTML = `<small style="color:#f0a800">${entry.ts}</small><br><b>${(entry.msg.split('→')[0]).trim()}</b><br>${(entry.msg.split('→')[1] || entry.msg).trim()}`;
+        ordersCont.prepend(card);
+      });
       lastLogCount = logs.length;
     }
   }catch(e){}
 }
 
-const p2img=document.getElementById('p2-img'),p2imgvs=document.getElementById('p2-img-vs'),p2url=document.getElementById('p2-url');
+const p2img=document.getElementById('p2-img');
 let lastPtr='';
 async function poll(){
   try{
@@ -236,12 +195,8 @@ async function poll(){
     const ptr=(await r.text()).trim();
     if(ptr && ptr!==lastPtr){
       lastPtr=ptr;
-      const tmp=new Image();
-      tmp.onload=()=>{ p2img.src=p2imgvs.src=tmp.src; };
-      tmp.src='https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/'+ptr+'?v='+Date.now();
+      p2img.src='https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/'+ptr+'?v='+Date.now();
     }
-    const mr=await fetch('https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/screen_meta.json?v='+Date.now());
-    if(mr.ok){const m=await mr.json(); p2url.textContent=m.url;}
   }catch(e){}
 }
 setInterval(fetchLogs, 3000); fetchLogs();
