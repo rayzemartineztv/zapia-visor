@@ -8,50 +8,53 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#020205;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hidden;height:100vh;display:flex;flex-direction:column}
 
-/* Barra de Navegación y Herramientas (FIJA ARRIBA) */
-#header{background:#050510;border-bottom:1px solid #1a1a3a;z-index:100;flex-shrink:0}
+/* Header & Tabs */
+#header{background:#050510;border-bottom:1px solid #1a1a3a;z-index:100;flex-shrink:0;transition:transform 0.3s}
 #tabs{display:flex}
 .tab{flex:1;padding:12px 0;text-align:center;cursor:pointer;font-size:12px;font-weight:600;color:#445;transition:all .2s;border-bottom:3px solid transparent}
 .tab.active{color:#fff;border-bottom-color:#f0a800}
 
-/* Submenú de Herramientas (Debajo de pestañas, no tapa el contenido) */
+/* Toolbar */
 #toolbar{background:#080816;padding:8px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #151525}
-.f5-btn{background:rgba(240,168,0,0.1);border:1px solid #f0a80044;
+.btn{background:rgba(240,168,0,0.1);border:1px solid #f0a80044;
   color:#f0a800;padding:5px 12px;border-radius:4px;font-size:10px;font-weight:bold;cursor:pointer;
   display:flex;align-items:center;gap:6px;transition:all 0.2s}
-.f5-btn:hover{background:#f0a800;color:#000;border-color:#f0a800}
-.f5-btn:active{transform:scale(0.95)}
+.btn:hover{background:#f0a800;color:#000;border-color:#f0a800}
 
-/* Contenedor de Pantallas (Ajustado al alto restante) */
+/* Contenedor Principal */
 #screens{flex:1;position:relative;overflow:hidden;background:#000}
 .screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:stretch;background:#020205}
 .screen.active{display:flex}
 
 /* P1 - Panel de Órdenes */
 #screen-p1{background:#010105;padding:10px;overflow-y:auto;font-family:'Consolas','Monaco',monospace}
-.order-card{background:rgba(15,15,30,0.8);border-left:3px solid #f0a800;padding:8px 10px;margin-bottom:6px;border-radius:3px;animation:fadeIn 0.2s ease}
-.order-ts{color:#445;font-size:9px;margin-bottom:2px}
-.order-title{color:#f0a800;font-weight:bold;font-size:10.5px;margin-bottom:2px}
-.order-msg{color:#aaccff;font-size:10px;line-height:1.3}
-.order-ok{border-left-color:#00ff88}
+.order-card{background:rgba(15,15,30,0.8);border-left:3px solid #f0a800;padding:8px 10px;margin-bottom:6px;border-radius:3px}
+.order-ts{color:#445;font-size:9px}
+.order-title{color:#f0a800;font-weight:bold;font-size:10.5px}
+.order-msg{color:#aaccff;font-size:10px}
 
 /* P2 - Zapia Screen */
 #p2-topbar{background:#0a0a1a;border-bottom:1px solid #1a1a3a;padding:6px 12px;display:flex;align-items:center;gap:10px}
 #p2-url{flex:1;background:#08080f;border:1px solid #1a1a2a;border-radius:5px;padding:3px 10px;font-size:10.5px;color:#667;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#p2-img-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;position:relative}
-#p2-img{max-width:100%;max-height:100%;object-fit:contain;transition:opacity .2s}
+#p2-img-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;position:relative;cursor:zoom-in}
+#p2-img{max-width:100%;max-height:100%;object-fit:contain;transition:all 0.3s ease}
+
+/* Fullscreen Mode (Theater) */
+body.theater-mode #header { transform: translateY(-100%); position: absolute; width: 100%; }
+body.theater-mode #screens { height: 100vh; }
+body.theater-mode #p2-topbar { display: none; }
+body.theater-mode #p2-img-wrap { cursor: zoom-out; }
+body.theater-mode #p2-img { max-width: 100vw; max-height: 100vh; width: 100vw; height: 100vh; object-fit: contain; background: #000; }
 
 /* VS Split */
 #screen-vs{flex-direction:row!important}
 .half{flex:1;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden}
 .divider{width:1px;background:#1a1a3a;flex-shrink:0}
 
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
-.dot{width:7px;height:7px;border-radius:50%;background:#00ff88;animation:pulse 1.2s ease infinite}
 @keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
-<body>
+<body id="main-body">
 
 <div id="header">
   <div id="tabs">
@@ -60,47 +63,43 @@ body{background:#020205;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hi
     <div class="tab"        onclick="show('vs')">VS</div>
   </div>
   <div id="toolbar">
-    <button class="f5-btn" onclick="manualRefresh()">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-      F5 ACTUALIZAR
-    </div>
+    <button class="btn" onclick="manualRefresh()">F5 ACTUALIZAR</button>
+    <button class="btn" id="fs-btn" onclick="toggleTheater()">EXPANDIR PANTALLA</button>
   </div>
 </div>
 
 <div id="screens">
-  <!-- P1 -->
   <div id="screen-p1" class="screen active">
     <div id="orders-container"></div>
   </div>
 
-  <!-- P2 -->
   <div id="screen-p2" class="screen">
     <div id="p2-topbar">
-      <div style="display:flex;align-items:center;gap:5px;font-size:9px;font-weight:700;color:#00ff88"><div class="dot"></div>LIVE</div>
+      <div style="font-size:9px;color:#00ff88;font-weight:700">LIVE</div>
       <div id="p2-url">conectando…</div>
     </div>
-    <div id="p2-img-wrap">
-      <img id="p2-img" src="" style="opacity:0" alt=""/>
+    <div id="p2-img-wrap" onclick="handleImgClick()">
+      <img id="p2-img" src="" style="opacity:0"/>
     </div>
-    <div style="background:#050510;padding:4px 12px;font-size:9px;color:#334;display:flex;justify-content:space-between;border-top:1px solid #1a1a3a">
+    <div style="background:#050510;padding:4px 12px;font-size:9px;color:#334;display:flex;justify-content:space-between">
       <span id="p2-status">🟢 ONLINE</span>
       <span id="p2-time"></span>
     </div>
   </div>
 
-  <!-- VS -->
   <div id="screen-vs" class="screen">
     <div class="half" id="vs-orders" style="padding:8px;overflow-y:auto;background:#010105"></div>
     <div class="divider"></div>
-    <div class="half" style="background:#000">
-      <img id="p2-img-vs" src="" style="max-width:100%;max-height:100%;object-fit:contain" alt=""/>
-      <div style="position:absolute;top:6px;left:6px;font-size:8px;color:#00ff88;font-weight:bold;background:rgba(0,0,0,0.6);padding:2px 5px;border-radius:3px">SCREEN</div>
+    <div class="half" style="background:#000" onclick="handleImgClick()">
+      <img id="p2-img-vs" src="" style="max-width:100%;max-height:100%;object-fit:contain"/>
     </div>
   </div>
 </div>
 
 <script>
 let currentTab = 'p1';
+let isTheater = false;
+
 function show(id){
   currentTab = id;
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -108,6 +107,17 @@ function show(id){
   document.getElementById('screen-'+id).classList.add('active');
   const idx = {p1:0,p2:1,vs:2}[id];
   document.querySelectorAll('.tab')[idx].classList.add('active');
+}
+
+function toggleTheater(){
+  isTheater = !isTheater;
+  document.getElementById('main-body').classList.toggle('theater-mode', isTheater);
+  document.getElementById('fs-btn').textContent = isTheater ? 'REDUCIR PANTALLA' : 'EXPANDIR PANTALLA';
+}
+
+function handleImgClick(){
+  if(isTheater) toggleTheater();
+  else if(currentTab === 'p2' || currentTab === 'vs') toggleTheater();
 }
 
 function manualRefresh(){
@@ -119,17 +129,13 @@ const ordersCont = document.getElementById('orders-container');
 const vsOrdersCont = document.getElementById('vs-orders');
 let lastLogCount = 0;
 
-function addOrder(entry, isManual){
+function addOrder(entry){
   const card = document.createElement('div');
-  card.className = 'order-card' + (entry.tipo==='ok' ? ' order-ok' : '');
-  const title = entry.msg.includes('→') ? entry.msg.split('→')[0] : 'COMANDO';
-  const detail = entry.msg.includes('→') ? entry.msg.split('→')[1] : entry.msg;
-  card.innerHTML = `<div class="order-ts">${entry.ts}</div><div class="order-title">${title.trim()}</div><div class="order-msg">${detail.trim()}</div>`;
+  card.className = 'order-card';
+  card.innerHTML = `<div class="order-ts">${entry.ts}</div><div class="order-title">${(entry.msg.split('→')[0]).trim()}</div><div class="order-msg">${(entry.msg.split('→')[1] || entry.msg).trim()}</div>`;
   ordersCont.prepend(card);
   const vsCard = card.cloneNode(true);
   vsOrdersCont.prepend(vsCard);
-  if(ordersCont.children.length > 50) ordersCont.removeChild(ordersCont.lastChild);
-  if(vsOrdersCont.children.length > 50) vsOrdersCont.removeChild(vsOrdersCont.lastChild);
 }
 
 async function fetchLogs(isManual){
@@ -138,11 +144,10 @@ async function fetchLogs(isManual){
     const logs = await r.json();
     if(isManual){
       ordersCont.innerHTML = ''; vsOrdersCont.innerHTML = '';
-      logs.slice(-30).forEach(l => addOrder(l));
+      logs.slice(-30).forEach(addOrder);
       lastLogCount = logs.length;
     } else if(logs.length > lastLogCount){
-      const nuevos = logs.slice(lastLogCount);
-      nuevos.forEach(addOrder);
+      logs.slice(lastLogCount).forEach(addOrder);
       lastLogCount = logs.length;
     }
   }catch(e){}
