@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Zapia Visor — HQ</title>
+<title>Zapia Control — HQ</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#04040a;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hidden;height:100vh}
@@ -14,16 +14,13 @@ body{background:#04040a;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hi
 .screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:stretch;background:#04040a}
 .screen.active{display:flex}
 
-/* Estilo Canvas P1 */
-.canvas-wrap{position:relative;width:100%;height:100%}
-canvas{display:block;width:100%;height:100%}
-.hud{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
-  background:rgba(0,0,0,.6);padding:5px 16px;border-radius:20px;
-  font-size:11px;color:#aaa;white-space:nowrap;pointer-events:none}
-.badge{position:absolute;top:10px;left:12px;font-size:10px;font-weight:700;
-  padding:3px 10px;border-radius:12px;pointer-events:none;z-index:5}
-.badge-p1{background:rgba(255,168,0,.15);color:#f0a800;border:1px solid #f0a80044}
-.badge-p2{background:rgba(0,255,120,.15);color:#00ff88;border:1px solid #00ff8844}
+/* P1 - Panel de Órdenes */
+#screen-p1{background:#020208;padding:15px;overflow-y:auto;font-family:'Courier New',monospace}
+.order-card{background:rgba(20,20,35,0.6);border-left:4px solid #f0a800;padding:12px;margin-bottom:10px;border-radius:4px;animation:fadeIn 0.3s ease}
+.order-ts{color:#556;font-size:10px;margin-bottom:4px}
+.order-title{color:#f0a800;font-weight:bold;font-size:12px;margin-bottom:4px}
+.order-msg{color:#cceeff;font-size:11px;line-height:1.4}
+.order-ok{border-left-color:#00ff88}
 
 /* P2 - Zapia Screen */
 #p2-topbar{background:#0a0a1a;border-bottom:1px solid #1a1a3a;padding:8px 15px;display:flex;align-items:center;gap:12px}
@@ -33,17 +30,18 @@ canvas{display:block;width:100%;height:100%}
 
 /* VS Split */
 #screen-vs{flex-direction:row!important}
-.half{flex:1;height:100%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.half{flex:1;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden}
 .divider{width:2px;background:linear-gradient(to bottom,transparent,#334,transparent);flex-shrink:0}
 
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
 .dot{width:8px;height:8px;border-radius:50%;background:#00ff88;animation:pulse 1.2s ease infinite}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
 
 <div id="tabs">
-  <div class="tab active" onclick="show('p1')">P1 — Dorado (Local)</div>
+  <div class="tab active" onclick="show('p1')">P1 — Gestión de Órdenes</div>
   <div class="tab"        onclick="show('p2')">P2 — Zapia Screen (Vivo)</div>
   <div class="tab"        onclick="show('vs')">AMBAS (VS)</div>
 </div>
@@ -51,11 +49,8 @@ canvas{display:block;width:100%;height:100%}
 <div id="screens">
   <!-- P1 -->
   <div id="screen-p1" class="screen active">
-    <div class="canvas-wrap">
-      <canvas id="c1"></canvas>
-      <div class="badge badge-p1">P1 · CANVAS DORADO · 60FPS</div>
-      <div class="hud" id="hud1">60 fps · 16.7ms</div>
-    </div>
+    <div style="font-size:10px;color:#445;margin-bottom:15px;letter-spacing:1px">SISTEMA DE ÓRDENES EN VIVO 🔴</div>
+    <div id="orders-container"></div>
   </div>
 
   <!-- P2 -->
@@ -75,14 +70,13 @@ canvas{display:block;width:100%;height:100%}
 
   <!-- VS -->
   <div id="screen-vs" class="screen">
-    <div class="half">
-      <canvas id="c3" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
-      <div class="badge badge-p1" style="top:8px;left:8px;font-size:9px">P1 · LOCAL</div>
+    <div class="half" id="vs-orders" style="padding:10px;overflow-y:auto">
+      <div style="font-size:9px;color:#334;margin-bottom:10px">P1 · ÓRDENES</div>
     </div>
     <div class="divider"></div>
     <div class="half" style="background:#000">
       <img id="p2-img-vs" src="" style="max-width:100%;max-height:100%;object-fit:contain"/>
-      <div class="badge badge-p2" style="top:8px;left:8px;font-size:9px">P2 · SCREEN</div>
+      <div style="position:absolute;top:8px;left:8px;font-size:9px;color:#00ff88;font-weight:bold;background:rgba(0,0,0,0.5);padding:2px 6px;border-radius:4px">P2 · SCREEN</div>
     </div>
   </div>
 </div>
@@ -96,38 +90,41 @@ function show(id){
   document.querySelectorAll('.tab')[idx].classList.add('active');
 }
 
-function makeHeart(canvas){
-  const ctx=canvas.getContext('2d');
-  let fn=0;
-  function resize(){canvas.width=canvas.offsetWidth*devicePixelRatio;canvas.height=canvas.offsetHeight*devicePixelRatio;}
-  resize(); window.addEventListener('resize',resize);
-  function draw(){
-    const W=canvas.width,H=canvas.height;
-    ctx.fillStyle='rgba(4,4,10,0.4)'; ctx.fillRect(0,0,W,H);
-    const beat=1+.08*Math.sin(fn*.18),ang=(fn*.018)%(2*Math.PI),cx=W/2,cy=H/2+H*.03,sc=Math.min(W,H)*.105;
-    const pts=[],N=200;
-    for(let i=0;i<=N;i++){
-      const t=2*Math.PI*i/N;
-      const x=16*Math.pow(Math.sin(t),3)*.3*beat,y=(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))*.3*beat,z=8*Math.sin(t)*Math.cos(t)*.3*beat;
-      const rx=x*Math.cos(ang)+z*Math.sin(ang),rz=-x*Math.sin(ang)+z*Math.cos(ang);
-      const d=500/(500+rz*28); pts.push([cx+rx*d*sc,cy-y*d*sc,rz]);
-    }
-    for(let i=0;i<N;i++){
-      const d=Math.max(0.2,Math.min(1,(pts[i][2]+3.5)/7));
-      ctx.strokeStyle=`rgb(${Math.round(255*d)},${Math.round(215*d)},${Math.round(50*d)})`;
-      ctx.lineWidth=Math.max(1,2.5*d*W/800);
-      ctx.beginPath();ctx.moveTo(pts[i][0],pts[i][1]);ctx.lineTo(pts[i+1][0],pts[i+1][1]);ctx.stroke();
-    }
-    fn++; requestAnimationFrame(draw);
-  }
-  draw();
+const ordersCont = document.getElementById('orders-container');
+const vsOrdersCont = document.getElementById('vs-orders');
+let lastLogCount = 0;
+
+function addOrder(entry){
+  const card = document.createElement('div');
+  card.className = 'order-card' + (entry.tipo==='ok' ? ' order-ok' : '');
+  card.innerHTML = `
+    <div class="order-ts">${entry.ts}</div>
+    <div class="order-title">${entry.msg.split('→')[0]}</div>
+    <div class="order-msg">${entry.msg.includes('→') ? entry.msg.split('→')[1] : entry.msg}</div>
+  `;
+  ordersCont.prepend(card);
+  
+  // Clonar para la vista VS
+  const vsCard = card.cloneNode(true);
+  vsOrdersCont.appendChild(vsCard);
+  vsOrdersCont.scrollTop = vsOrdersCont.scrollHeight;
 }
 
-makeHeart(document.getElementById('c1'));
-makeHeart(document.getElementById('c3'));
+async function fetchLogs(){
+  try{
+    const r = await fetch('https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/logs.json?v='+Date.now());
+    if(!r.ok) return;
+    const logs = await r.json();
+    if(logs.length > lastLogCount){
+      const nuevos = logs.slice(lastLogCount);
+      nuevos.forEach(addOrder);
+      lastLogCount = logs.length;
+    }
+  }catch(e){}
+}
 
 // Polling P2
-const p2img=document.getElementById('p2-img'),p2imgvs=document.getElementById('p2-img-vs'),p2time=document.getElementById('p2-time');
+const p2img=document.getElementById('p2-img'),p2imgvs=document.getElementById('p2-img-vs'),p2time=document.getElementById('p2-time'),p2url=document.getElementById('p2-url');
 let lastPtr='';
 async function poll(){
   try{
@@ -143,8 +140,12 @@ async function poll(){
       };
       tmp.src='https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/'+ptr;
     }
+    const mr=await fetch('https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/screen_meta.json?v='+Date.now());
+    if(mr.ok){const m=await mr.json(); p2url.textContent=m.url;}
   }catch(e){}
 }
+
+setInterval(fetchLogs, 2000); fetchLogs();
 setInterval(poll, 2500); poll();
 </script>
 </body>
