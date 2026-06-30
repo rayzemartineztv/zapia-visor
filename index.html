@@ -2,70 +2,93 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>Zapia Master Control</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;color:#fff;font-family:'Segoe UI',sans-serif;height:100vh;display:flex;flex-direction:column}
-#header{background:#050510;border-bottom:1px solid #1a1a3a;flex-shrink:0;z-index:100}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body, html { height: 100%; width: 100%; overflow: hidden; position: fixed; }
+body{background:#000;color:#fff;font-family:'Segoe UI',sans-serif;display:flex;flex-direction:column}
+
+/* HEADER FIJO SUPERIOR */
+#header{background:#050510;border-bottom:1px solid #1a1a3a;flex-shrink:0;z-index:1000;width:100%}
 #tabs{display:flex}
-.tab{flex:1;padding:12px 0;text-align:center;cursor:pointer;font-size:11px;font-weight:700;color:#445;border-bottom:2px solid transparent}
-.tab.active{color:#fff;border-bottom-color:#f0a800}
-#toolbar{background:#080816;padding:8px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #151525}
-.btn{background:rgba(240,168,0,0.1);border:1px solid #f0a80044;color:#f0a800;padding:5px 12px;border-radius:4px;font-size:10px;font-weight:bold;cursor:pointer}
-#minimize-btn{position:absolute;top:20px;right:20px;z-index:2000;background:rgba(255,50,50,0.5);border:1px solid #ff4444;color:#fff;width:40px;height:40px;border-radius:50%;display:none;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(5px);box-shadow:0 0 15px rgba(255,0,0,0.3)}
-body.theater-mode #minimize-btn{display:flex}
-#screens{flex:1;position:relative;background:#000;overflow:hidden}
+.tab{flex:1;padding:14px 0;text-align:center;cursor:pointer;font-size:11px;font-weight:700;color:#445;border-bottom:2px solid transparent;text-transform:uppercase}
+.tab.active{color:#fff;border-bottom-color:#f0a800;background:rgba(240,168,0,0.05)}
+#toolbar{background:#080816;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #151525}
+.btn{background:rgba(240,168,0,0.1);border:1px solid #f0a80044;color:#f0a800;padding:6px 12px;border-radius:4px;font-size:10px;font-weight:bold;cursor:pointer}
+
+/* CONTENEDOR PRINCIPAL - AJUSTE DINÁMICO */
+#screens{flex:1;position:relative;background:#000;width:100%;overflow:hidden}
 .screen{position:absolute;inset:0;display:none;flex-direction:column;background:#020205}
 .screen.active{display:flex}
-.chat-container{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:12px;background:#010105}
-.msg{max-width:85%;padding:10px;border-radius:10px;font-size:12px;line-height:1.4}
+
+/* CHAT CON SCROLL INDEPENDIENTE */
+.chat-container{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:12px;background:#010105;padding-bottom:20px}
+.msg{max-width:85%;padding:10px;border-radius:10px;font-size:12px;line-height:1.4;word-wrap:break-word}
 .msg.user{align-self:flex-end;background:#1a1a3a;color:#fff;border-bottom-right-radius:0}
 .msg.zap{align-self:flex-start;background:#101025;color:#cceeff;border-bottom-left-radius:0;border-left:3px solid #f0a800}
-#p3-footer{background:#080816;border-top:1px solid #1a1a3a;flex-shrink:0}
-.upload-status{background:#05050f;padding:8px 12px;max-height:80px;overflow-y:auto;border-bottom:1px solid #111}
+
+/* BARRA DE COMANDOS FIJA INFERIOR */
+#p3-footer{background:#080816;border-top:1px solid #1a1a3a;flex-shrink:0;width:100%;z-index:1000}
+.upload-status{background:#05050f;padding:6px 12px;max-height:60px;overflow-y:auto;border-bottom:1px solid #111}
 #file-pills{display:flex;flex-wrap:wrap;gap:6px}
 .pill{background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);padding:4px 10px;border-radius:15px;font-size:10px;color:#00ff88;display:flex;align-items:center;gap:6px}
-#input-bar{padding:12px;display:flex;align-items:center;gap:10px}
-#cmd-input{flex:1;background:#101020;border:1px solid #223;border-radius:20px;padding:10px 15px;color:#fff;font-size:13px;outline:none}
-.circle-btn{width:40px;height:40px;border-radius:50%;background:#1a1a3a;border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.mic-btn{background:#f0a800;color:#000;transition:all 0.3s}
-.mic-btn.recording{background:#ff0000;animation:pulse 1s infinite;transform:scale(1.1)}
+#input-bar{padding:10px 12px;display:flex;align-items:center;gap:8px;background:#080816}
+#cmd-input{flex:1;background:#101020;border:1px solid #223;border-radius:20px;padding:10px 15px;color:#fff;font-size:14px;outline:none;min-width:0}
+.circle-btn{width:38px;height:38px;border-radius:50%;background:#1a1a3a;border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.mic-btn{background:#f0a800;color:#000}
+.mic-btn.recording{background:#ff0000;animation:pulse 1s infinite}
+
+/* MODO CINE Y MINIMIZAR */
+#minimize-btn{position:fixed;top:15px;right:15px;z-index:9999;background:rgba(255,0,0,0.7);color:#fff;width:40px;height:40px;border-radius:50%;display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 15px rgba(255,0,0,0.5)}
+body.theater-mode #minimize-btn{display:flex}
+body.theater-mode #header, body.theater-mode #p3-footer, body.theater-mode #toolbar{display:none}
+body.theater-mode #screens{height:100vh}
+
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,0,0,0.7)}70%{box-shadow:0 0 0 10px rgba(255,0,0,0)}100%{box-shadow:0 0 0 0 rgba(255,0,0,0)}}
-#modal{position:absolute;inset:0;background:rgba(0,0,0,0.9);z-index:3000;display:none;align-items:center;justify-content:center;padding:20px}
-.modal-box{background:#0a0a1a;border:1px solid #f0a800;padding:25px;border-radius:15px;text-align:center;max-width:350px}
-body.theater-mode #header, body.theater-mode #toolbar { display: none; }
-body.theater-mode #screens { height: 100vh; }
 </style>
 </head>
 <body id="main-body">
-<div id="minimize-btn" onclick="toggleTheater()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div>
-<div id="modal"><div class="modal-box"><div style="font-size:14px;font-weight:bold;margin-bottom:10px;color:#f0a800">ENVIAR LOTE</div><div id="modal-desc" style="font-size:12px;color:#fff;margin-bottom:15px"></div><div style="display:flex;gap:12px"><button onclick="confirmBatch(false)" style="flex:1;background:#1a1a3a;color:#fff;border:none;padding:12px;border-radius:8px;cursor:pointer">SOLO TEXTO</button><button onclick="confirmBatch(true)" style="flex:1;background:#f0a800;color:#000;border:none;padding:12px;border-radius:8px;font-weight:bold;cursor:pointer">SÍ, ENVIAR TODO</button></div></div></div>
+
+<div id="minimize-btn" onclick="toggleTheater()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div>
+
 <div id="header">
   <div id="tabs">
     <div class="tab" onclick="show('p1')">ÓRDENES</div>
     <div class="tab" onclick="show('p2')">VISOR</div>
     <div class="tab active" onclick="show('p3')">ZAPIA MASTER</div>
   </div>
-  <div id="toolbar"><button class="btn" onclick="manualRefresh()">F5 ACTUALIZAR</button><button class="btn" onclick="toggleTheater()">EXPANDIR</button></div>
+  <div id="toolbar">
+    <div style="font-size:10px;color:#f0a800;font-weight:bold;letter-spacing:1px">M&A MASTER</div>
+    <div style="display:flex;gap:6px">
+      <button class="btn" onclick="manualRefresh()">F5</button>
+      <button class="btn" onclick="toggleTheater()">MAX</button>
+    </div>
+  </div>
 </div>
+
 <div id="screens">
   <div id="screen-p1" class="screen"><div class="chat-container" id="orders-container"></div></div>
-  <div id="screen-p2" class="screen"><div style="padding:8px;background:#0a0a1a;border-bottom:1px solid #111;font-size:10px;color:#667">VISOR VIVO</div><div id="p2-img-wrap" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:zoom-in" onclick="toggleTheater()"><img id="p2-img" style="max-width:100%;max-height:100%;object-fit:contain"/></div></div>
+  <div id="screen-p2" class="screen">
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000">
+      <img id="p2-img" style="max-width:100%;max-height:100%;object-fit:contain" onclick="toggleTheater()"/>
+    </div>
+  </div>
   <div id="screen-p3" class="screen active">
     <div class="chat-container" id="chat-hist"></div>
     <div id="p3-footer">
-      <div class="upload-status" id="upload-status-p3"><div id="file-pills"></div></div>
+      <div class="upload-status" id="upload-status-p3" style="display:none"><div id="file-pills"></div></div>
       <div id="input-bar">
         <button class="circle-btn" onclick="document.getElementById('hidden-file').click()">+</button>
         <input type="file" id="hidden-file" multiple style="display:none" onchange="handleFiles(this.files)">
-        <input type="text" id="cmd-input" placeholder="Escribe tu comando..." onkeypress="if(event.key==='Enter') sendCmd()">
+        <input type="text" id="cmd-input" placeholder="Comando..." onkeypress="if(event.key==='Enter') sendCmd()">
         <button id="mic-btn" class="circle-btn mic-btn" onclick="toggleMic()">🎤</button>
         <button class="circle-btn" onclick="sendCmd()">➤</button>
       </div>
     </div>
   </div>
 </div>
+
 <script>
 let currentTab = 'p3', filesInBatch = [], lastLogCount = 0, fullHistory = [], isTheater = false;
 let mediaRecorder, audioChunks = [], isRecording = false;
@@ -77,6 +100,7 @@ function show(id){
   document.getElementById('screen-'+id).classList.add('active');
   document.querySelector(`[onclick="show('${id}')"]`).classList.add('active');
 }
+
 function toggleTheater(){ isTheater = !isTheater; document.getElementById('main-body').classList.toggle('theater-mode', isTheater); }
 
 async function toggleMic(){
@@ -84,28 +108,20 @@ async function toggleMic(){
   if(!isRecording){
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder = new MediaRecorder(stream);
-      audioChunks = [];
+      mediaRecorder = new MediaRecorder(stream); audioChunks = [];
       mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        processSend("Audio grabado 🎤", false, true);
-        stream.getTracks().forEach(t => t.stop());
-      };
-      mediaRecorder.start();
-      isRecording = true;
-      btn.classList.add('recording');
-      btn.innerHTML = '⏹';
-    } catch (err) { alert("Error acceso micro: " + err); }
-  } else {
-    mediaRecorder.stop();
-    isRecording = false;
-    btn.classList.remove('recording');
-    btn.innerHTML = '🎤';
-  }
+      mediaRecorder.onstop = () => { processSend("Audio grabado 🎤", false); stream.getTracks().forEach(t => t.stop()); };
+      mediaRecorder.start(); isRecording = true; btn.classList.add('recording'); btn.innerHTML = '⏹';
+    } catch (err) { alert("Micro no disponible"); }
+  } else { mediaRecorder.stop(); isRecording = false; btn.classList.remove('recording'); btn.innerHTML = '🎤'; }
 }
 
-function handleFiles(files){ Array.from(files).forEach(f => filesInBatch.push(f)); renderPills(); }
+function handleFiles(files){
+  Array.from(files).forEach(f => filesInBatch.push(f));
+  document.getElementById('upload-status-p3').style.display = filesInBatch.length?'block':'none';
+  renderPills();
+}
+
 function renderPills(){
   const cont = document.getElementById('file-pills'); cont.innerHTML = '';
   filesInBatch.forEach((f, idx) => {
@@ -114,30 +130,31 @@ function renderPills(){
     cont.appendChild(p);
   });
 }
-function removeFile(idx){ filesInBatch.splice(idx, 1); renderPills(); }
+
+function removeFile(idx){ filesInBatch.splice(idx, 1); renderPills(); if(!filesInBatch.length) document.getElementById('upload-status-p3').style.display='none'; }
+
 function sendCmd(){
   const val = document.getElementById('cmd-input').value;
   if(!val && filesInBatch.length === 0) return;
-  if(filesInBatch.length > 0){
-    document.getElementById('modal-desc').textContent = '¿Confirmas el envío de este lote?';
-    document.getElementById('modal').style.display='flex';
-  } else { processSend(val, false); }
+  processSend(val, filesInBatch.length > 0);
 }
-function confirmBatch(wf){ document.getElementById('modal').style.display='none'; processSend(document.getElementById('cmd-input').value, wf); }
-function processSend(txt, wf, isAudio=false){
-  const h = {ts:new Date().toLocaleTimeString('es-CL'), msg:txt||'Envío de archivos', tipo:'user', files:wf?filesInBatch.length:0, audio:isAudio};
+
+function processSend(txt, wf){
+  const h = {ts:new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}), msg:txt||'Archivos', tipo:'user', files:wf?filesInBatch.length:0};
   fullHistory.push(h); renderChat(); document.getElementById('cmd-input').value = '';
-  if(wf) { filesInBatch = []; renderPills(); }
+  if(wf) { filesInBatch = []; renderPills(); document.getElementById('upload-status-p3').style.display='none'; }
 }
+
 function renderChat(){
   const hist = document.getElementById('chat-hist'); hist.innerHTML = '';
   fullHistory.forEach(m => {
     const d = document.createElement('div'); d.className = 'msg ' + (m.tipo==='user'?'user':'zap');
-    d.innerHTML = `<small style="opacity:0.5">${m.ts}</small><br>${m.msg}` + (m.files?`<br><small style="color:#00ff88">📦 ${m.files} archivos.</small>`:'');
+    d.innerHTML = `<small style="opacity:0.5;font-size:9px">${m.ts}</small><br>${m.msg}` + (m.files?`<br><small style="color:#00ff88">📦 ${m.files} archivos.</small>`:'');
     hist.appendChild(d);
   });
   hist.scrollTop = hist.scrollHeight;
 }
+
 function manualRefresh(){ fetchLogs(true); }
 async function fetchLogs(isManual){
   try{
@@ -145,12 +162,11 @@ async function fetchLogs(isManual){
     const logs = await r.json();
     if(logs.length > lastLogCount || isManual){
       logs.forEach(l => {
-        if(!fullHistory.find(h => h.ts===l.ts && h.msg===l.msg)){
+        if(!fullHistory.find(h => h.msg===l.msg && h.ts.startsWith(l.ts.substring(0,5)))){
           fullHistory.push({ts:l.ts, msg:l.msg, tipo:l.tipo==='user'?'user':'zap'});
         }
       });
-      lastLogCount = logs.length;
-      renderChat();
+      lastLogCount = logs.length; renderChat();
       const ord = document.getElementById('orders-container'); ord.innerHTML = '';
       logs.slice().reverse().forEach(entry => {
         const c = document.createElement('div'); c.className = 'msg zap';
@@ -168,8 +184,8 @@ async function poll(){
     p2img.src='https://raw.githubusercontent.com/rayzemartineztv/zapia-visor/main/'+ptr+'?v='+Date.now();
   }catch(e){}
 }
-setInterval(fetchLogs, 3000); fetchLogs();
-setInterval(poll, 4000); poll();
+setInterval(fetchLogs, 4000); fetchLogs();
+setInterval(poll, 5000); poll();
 </script>
 </body>
 </html>
