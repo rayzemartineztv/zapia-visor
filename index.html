@@ -3,52 +3,39 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Zapia Full Control</title>
+<title>Zapia Control Pro — Full</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#020205;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hidden;height:100vh;display:flex;flex-direction:column}
-
-/* Header & Tabs */
-#header{background:#050510;border-bottom:1px solid #1a1a3a;z-index:100;flex-shrink:0}
+#header{background:#050510;border-bottom:1px solid #1a1a3a;flex-shrink:0}
 #tabs{display:flex}
 .tab{flex:1;padding:12px 0;text-align:center;cursor:pointer;font-size:11px;font-weight:600;color:#445;border-bottom:2px solid transparent}
 .tab.active{color:#fff;border-bottom-color:#f0a800}
 
-/* Toolbar */
-#toolbar{background:#080816;padding:6px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #151525}
-.btn{background:rgba(240,168,0,0.1);border:1px solid #f0a80044;color:#f0a800;padding:4px 10px;border-radius:4px;font-size:10px;cursor:pointer}
-
-/* Contenedor Principal */
 #screens{flex:1;position:relative;overflow:hidden;background:#000}
 .screen{position:absolute;inset:0;display:none;flex-direction:column;background:#020205}
 .screen.active{display:flex}
 
-/* Estilos de Chat (Historial) */
 .chat-container{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:10px;background:#010105}
 .msg{max-width:85%;padding:10px;border-radius:8px;font-size:11px;line-height:1.4;animation:fadeIn 0.2s ease}
 .msg.user{align-self:flex-end;background:#1a1a3a;color:#fff;border-bottom-right-radius:0}
 .msg.zap{align-self:flex-start;background:#101025;color:#cceeff;border-bottom-left-radius:0;border-left:2px solid #f0a800}
 
-/* P3 - Módulo de Carga e Interacción */
+/* P3 - Módulo de Carga */
 #p3-wrap{flex:1;display:flex;flex-direction:column}
-.upload-mini{background:#080816;padding:10px;border-bottom:1px solid #1a1a3a}
-#file-pills{display:flex;gap:5px;overflow-x:auto;padding:5px 0}
-.pill{background:#151525;border:1px solid #334;padding:3px 8px;border-radius:12px;font-size:9px;white-space:nowrap;color:#889}
-.pill.ready{border-color:#00ff88;color:#00ff88}
+.upload-status{background:#080816;padding:12px;border-bottom:1px solid #1a1a3a;max-height:120px;overflow-y:auto}
+#file-pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);padding:4px 10px;border-radius:15px;font-size:10px;color:#00ff88;display:flex;align-items:center;gap:6px}
+.pill .remove{cursor:pointer;color:#ff4444;font-weight:bold;font-size:12px}
 
-/* Barra de Comandos Inferior (Igual a la App) */
 #input-bar{background:#080816;padding:12px;border-top:1px solid #1a1a3a;display:flex;align-items:center;gap:10px}
 #cmd-input{flex:1;background:#101020;border:1px solid #223;border-radius:20px;padding:8px 15px;color:#fff;font-size:12px;outline:none}
-.circle-btn{width:35px;height:35px;border-radius:50%;background:#1a1a3a;border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.circle-btn{width:35px;height:35px;border-radius:50%;background:#1a1a3a;border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s}
+.circle-btn:active{transform:scale(0.9)}
 .mic-btn{background:#f0a800;color:#000}
 
-/* Pantalla 2 Visor */
-#p2-img-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000}
-#p2-img{max-width:100%;max-height:100%;object-fit:contain}
-
-/* Modal de Confirmación */
-#modal{position:absolute;inset:0;background:rgba(0,0,0,0.8);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}
-.modal-box{background:#0a0a1a;border:1px solid #f0a800;padding:20px;border-radius:10px;text-align:center;max-width:300px}
+#modal{position:absolute;inset:0;background:rgba(0,0,0,0.85);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:#0a0a1a;border:1px solid #f0a800;padding:25px;border-radius:12px;text-align:center;max-width:320px}
 
 @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 </style>
@@ -57,11 +44,12 @@ body{background:#020205;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hi
 
 <div id="modal">
   <div class="modal-box">
-    <div style="font-size:14px;font-weight:bold;margin-bottom:10px">¿ENVIAR LOTE COMPLETO?</div>
-    <div id="modal-desc" style="font-size:11px;color:#889;margin-bottom:20px"></div>
+    <div style="font-size:13px;font-weight:bold;margin-bottom:8px;color:#f0a800">CONFIRMACIÓN DE LOTE</div>
+    <div id="modal-desc" style="font-size:11px;color:#fff;margin-bottom:15px;line-height:1.4"></div>
+    <div id="modal-file-list" style="font-size:9px;color:#889;margin-bottom:20px;max-height:80px;overflow-y:auto;text-align:left;background:rgba(0,0,0,0.3);padding:8px;border-radius:5px"></div>
     <div style="display:flex;gap:10px">
-      <button class="btn" style="flex:1" onclick="confirmBatch(false)">SOLO TEXTO</button>
-      <button class="btn" style="flex:1;background:#f0a800;color:#000" onclick="confirmBatch(true)">SÍ, CON TODO</button>
+      <button onclick="confirmBatch(false)" style="flex:1;background:#1a1a3a;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer">SOLO TEXTO</button>
+      <button onclick="confirmBatch(true)" style="flex:1;background:#f0a800;color:#000;border:none;padding:10px;border-radius:6px;font-weight:bold;cursor:pointer">SÍ, ENVIAR TODO</button>
     </div>
   </div>
 </div>
@@ -73,35 +61,27 @@ body{background:#020205;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hi
     <div class="tab" onclick="show('vs')">VS</div>
     <div class="tab active" onclick="show('p3')">ZAPIA WEB</div>
   </div>
-  <div id="toolbar">
-    <button class="btn" onclick="location.reload()">F5 APP</button>
-    <div style="font-size:9px;color:#445;margin-left:auto">LIM: 2GB/LOTE · 4K OK</div>
-  </div>
 </div>
 
 <div id="screens">
   <div id="screen-p1" class="screen"><div class="chat-container" id="p1-logs"></div></div>
-  
-  <div id="screen-p2" class="screen">
-    <div id="p2-img-wrap"><img id="p2-img" src=""/></div>
-  </div>
-
+  <div id="screen-p2" class="screen"><div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden"><img id="p2-img" style="max-width:100%;max-height:100%;object-fit:contain"/></div></div>
   <div id="screen-vs" class="screen"></div>
 
   <div id="screen-p3" class="screen active">
     <div id="p3-wrap">
       <div class="chat-container" id="chat-hist">
-        <div class="msg zap">Bienvenido a Zapia Web, Felipe. Estoy listo para procesar tus lotes sin limitaciones de la app. ¿Qué gestionamos hoy?</div>
+        <div class="msg zap">Panel de control activo. Lista para recibir tus lotes y archivos con control total de nombres y pesos.</div>
       </div>
-      <div class="upload-mini">
-        <div style="font-size:9px;color:#556;margin-bottom:5px">ARCHIVOS CARGADOS (LOTE):</div>
+      <div class="upload-status" id="upload-status">
+        <div style="font-size:9px;color:#445;margin-bottom:8px;font-weight:bold;letter-spacing:1px">LOTE ACTUAL:</div>
         <div id="file-pills"></div>
       </div>
       <div id="input-bar">
-        <button class="circle-btn" onclick="document.getElementById('hidden-file').click()">+</button>
+        <button class="circle-btn" onclick="document.getElementById('hidden-file').click()" title="Adjuntar archivos">+</button>
         <input type="file" id="hidden-file" multiple style="display:none" onchange="handleFiles(this.files)">
-        <input type="text" id="cmd-input" placeholder="Escribe tu comando o sube archivos..." onkeypress="if(event.key==='Enter') sendCmd()">
-        <button class="circle-btn mic-btn" id="mic-btn" onclick="toggleMic()">🎤</button>
+        <input type="text" id="cmd-input" placeholder="Escribe tu comando..." onkeypress="if(event.key==='Enter') sendCmd()">
+        <button class="circle-btn mic-btn" id="mic-btn">🎤</button>
         <button class="circle-btn" onclick="sendCmd()">➤</button>
       </div>
     </div>
@@ -120,16 +100,31 @@ function show(id){
 function handleFiles(files){
   Array.from(files).forEach(f => {
     filesInBatch.push(f);
-    const p = document.createElement('div'); p.className='pill ready'; p.textContent=f.name;
-    document.getElementById('file-pills').appendChild(p);
+    renderPills();
   });
+}
+
+function renderPills(){
+  const cont = document.getElementById('file-pills');
+  cont.innerHTML = '';
+  filesInBatch.forEach((f, idx) => {
+    const p = document.createElement('div'); p.className='pill';
+    p.innerHTML = `<span>${f.name}</span><span class="remove" onclick="removeFile(${idx})">×</span>`;
+    cont.appendChild(p);
+  });
+}
+
+function removeFile(idx){
+  filesInBatch.splice(idx, 1);
+  renderPills();
 }
 
 function sendCmd(){
   const val = document.getElementById('cmd-input').value;
   if(!val && filesInBatch.length === 0) return;
   if(filesInBatch.length > 0){
-    document.getElementById('modal-desc').textContent = `Vas a enviar "${val || 'Comando de voz'}" junto con ${filesInBatch.length} archivos (Fotos/Vídeos).`;
+    document.getElementById('modal-desc').textContent = `¿Confirmas el envío de tu orden con el siguiente lote de archivos?`;
+    document.getElementById('modal-file-list').innerHTML = filesInBatch.map(f => `• ${f.name} (${(f.size/1024/1024).toFixed(2)} MB)`).join('<br>');
     document.getElementById('modal').style.display='flex';
   } else {
     processSend(val, false);
@@ -143,26 +138,17 @@ function confirmBatch(withFiles){
 
 function processSend(txt, withFiles){
   const hist = document.getElementById('chat-hist');
-  if(txt){
-    const u = document.createElement('div'); u.className='msg user'; u.textContent=txt + (withFiles ? ' [+ ARCHIVOS]' : '');
+  if(txt || withFiles){
+    const u = document.createElement('div'); u.className='msg user';
+    let content = txt || '[Comando de archivos]';
+    if(withFiles) content += '<br><small style="color:#00ff88">📦 Lote enviado: ' + filesInBatch.length + ' archivos.</small>';
+    u.innerHTML = content;
     hist.appendChild(u);
   }
   document.getElementById('cmd-input').value = '';
-  if(withFiles) {
-    document.getElementById('file-pills').innerHTML = '';
-    filesInBatch = [];
-  }
+  if(withFiles) { filesInBatch = []; renderPills(); }
   hist.scrollTop = hist.scrollHeight;
-  // Sincronización con Zapia (Backend vía GitHub logs)
 }
-
-function toggleMic(){
-  const btn = document.getElementById('mic-btn');
-  btn.style.background = btn.style.background === 'red' ? '#f0a800' : 'red';
-  // Lógica de grabación y envío de audio...
-}
-
-// Polling P1/P2/Logs... (Mantener lógica anterior)
 </script>
 </body>
 </html>
